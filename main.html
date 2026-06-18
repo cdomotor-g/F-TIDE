@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FWIN-TIDE</title>
+  <link rel="icon" type="image/svg+xml" href="tower.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <img src="tower.svg" class="header-tower" alt="" aria-hidden="true" />
+      <div class="header-copy">
+        <h1>FWIN-TIDE</h1>
+        <p>Tower Infrastructure Decision Engine</p>
+      </div>
+    </div>
+    <div class="grid">
+      <section class="panel">
+        <div class="topbar">
+          <div class="toolbar-row">
+            <label class="file-label" for="jsonFileInput">Load tree.json</label>
+            <input class="file-input" id="jsonFileInput" type="file" accept=".json,application/json" />
+            <button class="btn" id="saveTreeBtn" type="button" disabled>Save tree.json</button>
+            <button class="btn" id="forkTreeBtn" type="button" disabled>Fork branch</button>
+            <button class="btn" id="saveSessionBtn" type="button" disabled>Save session</button>
+            <button class="btn" id="showSchemaBtn" type="button">Show tree schema</button>
+              <div id="schemaModalOverlay" class="modal-overlay hidden">
+                <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="schemaModalTitle">
+                  <div class="modal-header"><h2 id="schemaModalTitle" style="margin:0;">tree.json schema definition</h2><button class="btn-small" id="closeSchemaBtn" type="button">Close</button></div>
+                  <pre id="treeSchemaText" style="font-size:13px; color:#cbd5e1; line-height:1.5; background:#172234; border-radius:10px; padding:18px; margin:0; overflow-x:auto;"></pre>
+                </div>
+              </div>
+            <button class="btn" id="openTreeViewBtn" type="button">Open tree map</button>
+            <button class="btn" id="openTablesBtn" type="button">Open tables</button>
+          </div>
+        </div>
+        <div class="status-line">
+          <span id="loadStatus">No tree loaded yet.</span>
+          <span class="pill" id="toolVersion">Rule set: -</span>
+        </div>
+        <div id="assessmentMetaCard" class="card hidden">
+          <p class="card-title">Assessment details</p>
+          <div class="meta-grid">
+            <div class="meta-field"><label for="assessorInitialsInput">Assessor initials</label><input id="assessorInitialsInput" class="input" type="text" maxlength="20" placeholder="e.g. HS,AS,DW,RD,RH" /></div>
+            <div class="meta-field"><label for="stationNumberInput">Station number</label><input id="stationNumberInput" class="input" type="text" maxlength="50" placeholder="e.g. 123456A" /></div>
+            <div class="meta-field"><label for="stationNameInput">Station name</label><input id="stationNameInput" class="input" type="text" maxlength="120" placeholder="e.g. Burnett at XYZ" /></div>
+            <div class="meta-field"><label for="assessmentIdInput">Assessment ID</label><input id="assessmentIdInput" class="input" type="text" readonly /></div>
+            <div class="meta-field"><label for="supersedesAssessmentInput">Supersedes assessment</label><input id="supersedesAssessmentInput" class="input" type="text" list="previousAssessmentIds" placeholder="Optional previous assessment ID or type new one" /></div>
+          </div>
+          <datalist id="previousAssessmentIds"></datalist>
+        </div>
+        <div class="notice" id="startupNotice">Start by loading <span class="inline-code">tree.json</span>. Original tree format still works unchanged. Optional fields: <span class="inline-code">icon</span> and <span class="inline-code">links</span>.</div>
+        <div id="questionView" class="card hidden">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Question</p>
+            <div class="question-actions">
+              <button class="btn" id="restartBtn" type="button">⟲ Restart assessment</button>
+              <button class="btn" id="backBtn" type="button">← Back one step</button>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-meta"><span id="progressSummaryQ">Progress</span><span id="progressRemainingQ">Approx. - steps remaining</span></div>
+            <div class="progress-bar"><div id="progressFillQ" class="progress-fill"></div></div>
+          </div>
+          <div class="question-head"><span id="questionIcon" class="question-icon">?</span><p class="question-text" id="questionText">Loading question...</p></div>
+          <div id="supportLinks" class="support-links hidden"></div>
+          <div class="option-target-header"><div class="card-title" style="margin:0;">Answer options</div><div class="card-title" style="margin:0;">Next targets</div></div>
+          <div class="option-target-grid" id="optionTargetGrid"></div>
+          <p id="emptyTargets" class="empty">No next targets available.</p>
+        </div>
+        <div id="resultView" class="card hidden">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Outcome</p>
+            <div class="result-actions">
+              <button class="btn" id="restartResultBtn" type="button">⟲ Restart assessment</button>
+              <button class="btn" id="backResultBtn" type="button">← Back one step</button>
+            </div>
+          </div>
+          <div class="progress-wrap">
+            <div class="progress-meta"><span id="progressSummaryR">Progress</span><span id="progressRemainingR">Approx. - steps remaining</span></div>
+            <div class="progress-bar"><div id="progressFillR" class="progress-fill"></div></div>
+          </div>
+          <div id="resultBox" class="result-box">
+            <p class="result-title">Recommendation</p>
+            <p class="result-recommendation" id="resultRecommendation"></p>
+            <p class="result-rationale" id="resultRationale"></p>
+          </div>
+          <div id="missingRuleBox" class="missing-box hidden">
+            <p style="margin-top:0;"><strong>No current recommendation exists for this scenario.</strong></p>
+            <p class="footnote" style="margin-top:0;">Missing Rule means this path currently lands on a placeholder result instead of a final recommendation.</p>
+            <p class="footnote" style="margin-top:0;">If you apply an existing result below, that branch will immediately use it in this tree and future assessments will return that result after you save tree.json.</p>
+            <label for="missingRuleSelect">Select the recommendation that should apply</label>
+            <select id="missingRuleSelect" class="select-input"></select>
+            <label for="missingRuleText" style="margin-top:10px;">Notes (optional)</label>
+            <textarea id="missingRuleText" placeholder="Optional note about why this result should apply."></textarea>
+            <div class="missing-actions">
+              <button class="btn" id="applyMissingRuleBtn" type="button">Apply to current tree</button>
+              <button class="btn" id="saveMissingRuleBtn" type="button">Save unresolved case</button>
+            </div>
+            <p class="footnote" id="missingRuleSaveMessage"></p>
+          </div>
+        </div>
+        <div id="currentNodeCard" class="card hidden">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Current node</p>
+            <div class="node-actions">
+              <button class="btn-small" id="copyNodeIdBtn" type="button">Copy current ID</button>
+              <button class="btn-small" id="editNodeBtn" type="button">Edit this node</button>
+            </div>
+          </div>
+          <div class="id-row"><span class="pill" id="currentNodeIdPill">-</span><span id="saveStatus" class="footnote"></span></div>
+          <details><summary>Show / hide JSON</summary><pre class="json-pre" id="currentNodeJson">No tree loaded yet.</pre></details>
+        </div>
+        <p class="footnote">Live edits apply immediately. Use “Apply + save tree.json” in the editor when you want to download an updated copy.</p>
+      </section>
+      <aside class="panel">
+        <div class="card mini-tree-card" id="miniTreeCard" role="button" tabindex="0" aria-label="Open tree map">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Tree map</p>
+            <span class="pill" id="miniTreeCurrentPill">-</span>
+          </div>
+          <div id="miniTreeCanvas" class="mini-tree-canvas"></div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Decision path</p>
+            <div class="path-actions"><button class="btn-small" id="exportAssessmentBtn" type="button">Export assessment</button></div>
+          </div>
+          <div class="path-table-wrap">
+            <table class="path-table">
+              <thead><tr><th class="index-col">#</th><th>Question</th><th>Answer</th></tr></thead>
+              <tbody id="pathTableBody"></tbody>
+            </table>
+          </div>
+          <p id="emptyTrail" class="empty">No answers yet.</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <div id="editorModalOverlay" class="modal-overlay hidden">
+    <div id="editorModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="editorModalTitle">
+      <div class="modal-header"><h2 id="editorModalTitle" style="margin:0;">Edit current node</h2><button class="btn-small" id="closeEditorBtn" type="button">Close</button></div>
+      <p class="footnote">Use the guided editor for normal changes. Raw JSON remains available for advanced edits. The <span class="inline-code">id</span> stays locked during edits.</p>
+      <p id="editorMessage" class="footnote editor-message-top"></p>
+      <div id="renamePayloadBtnDock" class="hidden"><button class="btn-small" id="renamePayloadBtn" type="button">Rename ID</button></div>
+      <div class="editor-tabs" role="tablist" aria-label="Editor mode">
+        <button class="editor-tab active" id="editorFormTab" type="button">Guided editor</button>
+        <button class="editor-tab" id="editorRawTab" type="button">Raw JSON</button>
+      </div>
+      <div class="editor-toolbar" aria-label="Editor actions">
+        <div class="editor-action-group editor-action-primary">
+          <button class="btn" id="applyNodeEditsBtn" type="button">Apply edits</button>
+          <button class="btn primary" id="applyAndSaveNodeEditsBtn" type="button">Apply + save tree.json</button>
+        </div>
+        <div class="editor-action-group">
+          <button class="btn-small" id="openCreateQuestionBtn" type="button">New question</button>
+          <button class="btn-small" id="openCreateResultBtn" type="button">New result</button>
+        </div>
+        <div class="editor-action-group editor-action-danger">
+          <button class="btn danger" id="deletePayloadBtn" type="button">Delete this node</button>
+        </div>
+      </div>
+      <div id="editorValidationSummary" class="editor-banner hidden"></div>
+      <div id="nodeEditorForm" class="guided-editor"></div>
+      <div id="nodeEditorRawWrap" class="hidden"><textarea id="nodeEditorText" class="json-editor" spellcheck="false"></textarea></div>
+      <div id="createPayloadPanel" class="editor-subpanel hidden">
+        <div class="editor-row-head"><div class="editor-row-title" id="createPayloadTitle">Create new payload</div><div class="editor-row-actions"><button class="btn-small" id="closeCreatePayloadBtn" type="button">Hide creator</button></div></div>
+        <p class="editor-help">Create a new payload without leaving this window. It becomes available in target dropdowns immediately.</p>
+        <div id="createValidationSummary" class="editor-banner hidden"></div>
+        <div id="createPayloadForm" class="guided-editor"></div>
+        <p id="createPayloadMessage" class="footnote"></p>
+        <div class="modal-actions"><button class="btn" id="createPayloadBtn" type="button">Create payload</button></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="treeViewOverlay" class="modal-overlay hidden">
+    <div class="tree-view-modal" role="dialog" aria-modal="true" aria-labelledby="treeViewTitle">
+      <div class="tree-view-header">
+        <h2 id="treeViewTitle" style="margin:0;">Tree View</h2>
+        <div class="tree-view-controls">
+          <button class="btn-small" id="treeViewQuestionsOnlyBtn" type="button">Questions only</button>
+          <button class="btn-small" id="treeViewAutoArrangeBtn" type="button">Auto-arrange</button>
+          <button class="btn-small" id="treeViewZoomFitBtn" type="button">Zoom to fit</button>
+          <input id="treeViewSearchInput" class="input tree-view-search" type="search" placeholder="Search node ID or text" />
+          <button class="btn-small" id="treeViewCreateQuestionBtn" type="button">New question</button>
+          <button class="btn-small" id="treeViewCreateResultBtn" type="button">New result</button>
+          <button class="btn-small" id="treeViewCloseBtn" type="button">Close</button>
+        </div>
+      </div>
+      <div class="tree-view-body">
+        <div id="treeViewCanvas" class="tree-view-canvas"></div>
+        <div class="tree-view-sidebar"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="iconPickerOverlay" class="modal-overlay hidden">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="iconPickerTitle" style="max-width: 560px;">
+      <div class="modal-header">
+        <h2 id="iconPickerTitle" style="margin:0;">Choose an icon</h2>
+        <button class="btn-small" id="iconPickerCloseBtn" type="button">Close</button>
+      </div>
+      <div id="iconPickerGrid" class="icon-picker-buttons" aria-label="Icon choices"></div>
+      <div class="modal-actions" style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+        <button class="btn-small" id="iconPickerClearBtn" type="button">Clear</button>
+      </div>
+      <p class="footnote">Tip: You can also type any emoji or symbol directly in the icon field.</p>
+    </div>
+  </div>
+
+  <div id="tablesOverlay" class="modal-overlay hidden">
+    <div class="tables-modal" role="dialog" aria-modal="true" aria-labelledby="tablesTitle">
+      <div class="tables-header">
+        <h2 id="tablesTitle" style="margin:0;">Tree Tables</h2>
+        <button class="btn-small" id="tablesCloseBtn" type="button">Close</button>
+      </div>
+      <div class="tables-content" id="tablesContent"></div>
+    </div>
+  </div>
+
+  <div id="validationWarningOverlay" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="validationWarningTitle">
+      <div class="modal-header"><h2 id="validationWarningTitle" style="margin:0;">Validation warnings</h2><button class="btn-small" id="validationWarningCancelBtn" type="button">Cancel</button></div>
+      <p id="validationWarningCopy" class="footnote modal-warning-copy">Applying these changes may break the tree.</p>
+      <ul id="validationWarningList" class="editor-errors validation-warning-list"></ul>
+      <div class="modal-actions">
+        <button class="btn" id="validationWarningCancelBtnFooter" type="button">Cancel</button>
+        <button class="btn primary" id="validationWarningProceedBtn" type="button">Proceed anyway</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://unpkg.com/cytoscape@3.4.0/dist/cytoscape.min.js"></script>
+  <script src="decision_tool_epic2_authoring_safety.js"></script>
+</body>
+</html>

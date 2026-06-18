@@ -1,0 +1,1105 @@
+{
+  "title": "FWIN-TIDE",
+  "version": "v44.2",
+  "startNode": "AGE_TOWER",
+  "nodes": {
+    "AGE_TOWER": {
+      "id": "AGE_TOWER",
+      "icon": "⏳",
+      "note": "Entry point. Tower age screening.",
+      "question": "How old is the tower and infrastructure?",
+      "options": [
+        {
+          "label": "0-25 years",
+          "next": "WHS_RESULT"
+        },
+        {
+          "label": ">25 years",
+          "next": "RESULT_REBUILD_AGE"
+        }
+      ]
+    },
+    "WHS_RESULT": {
+      "id": "WHS_RESULT",
+      "icon": "⚠️",
+      "note": "WHS assessment branch.",
+      "question": "What is the WHS risk assessment result?",
+      "options": [
+        {
+          "label": "None",
+          "next": "FOOTING_RAG_BOLTS"
+        },
+        {
+          "label": "Minor",
+          "next": "FOOTING_RAG_BOLTS"
+        },
+        {
+          "label": "Moderate",
+          "next": "WHS_MODERATE_ELIMINATION"
+        },
+        {
+          "label": "Major",
+          "next": "WHS_MAJOR_ELIMINATION"
+        }
+      ]
+    },
+    "WHS_MAJOR_ELIMINATION": {
+      "id": "WHS_MAJOR_ELIMINATION",
+      "icon": "🚧",
+      "note": "Major WHS can/cannot be eliminated as part of remediation works without a full knockdown-rebuild.",
+      "question": "Can the WHS risk be eliminated without a full knockdown-rebuild?",
+      "options": [
+        {
+          "label": "Yes",
+          "next": "FOOTING_RAG_BOLTS"
+        },
+        {
+          "label": "No",
+          "next": "RESULT_REBUILD_WHS_MAJOR"
+        }
+      ]
+    },
+    "WHS_MODERATE_ELIMINATION": {
+      "id": "WHS_MODERATE_ELIMINATION",
+      "icon": "⚠️",
+      "note": "Moderate WHS can/cannot be reduced acceptably.",
+      "question": "Can the WHS risk be reduced to an acceptable level through targeted remediation, other than a full knockdown-rebuild?",
+      "options": [
+        {
+          "label": "Yes",
+          "next": "FOOTING_RAG_BOLTS"
+        },
+        {
+          "label": "No",
+          "next": "RESULT_REBUILD_WHS_MODERATE"
+        }
+      ]
+    },
+    "FOOTING_RAG_BOLTS": {
+      "id": "FOOTING_RAG_BOLTS",
+      "icon": "🧱",
+      "note": "Foundation / footing branch.",
+      "question": "How many rag bolts are in the footing?",
+      "options": [
+        {
+          "label": "4",
+          "next": "FLOOD_MAJOR_ZONE"
+        },
+        {
+          "label": "6 or more",
+          "next": "STRUCTURE_CONDITION"
+        },
+        {
+          "label": "Unknown / not assessed",
+          "next": "RESULT_NO_RULE"
+        }
+      ]
+    },
+    "FLOOD_MAJOR_ZONE": {
+      "id": "FLOOD_MAJOR_ZONE",
+      "icon": "🌊",
+      "question": "Is the station within a major flood zone?",
+      "options": [
+        {
+          "label": "Yes",
+          "next": "RESULT_REBUILD_FLOOD_AND_FOOTING"
+        },
+        {
+          "label": "No",
+          "next": "STRUCTURE_DRAWINGS"
+        }
+      ]
+    },
+    "STRUCTURE_CONDITION": {
+      "id": "STRUCTURE_CONDITION",
+      "icon": "🏗️",
+      "note": "Overall condition screening.",
+      "question": "What is the current condition of the infrastructure?",
+      "options": [
+        {
+          "label": "Good",
+          "next": "SENSOR_AGE"
+        },
+        {
+          "label": "Fair",
+          "next": "SENSOR_AGE"
+        },
+        {
+          "label": "Poor",
+          "next": "RESULT_REBUILD_STRUCTURE"
+        },
+        {
+          "label": "Unknown / not assessed",
+          "next": "RESULT_NO_RULE"
+        }
+      ]
+    },
+    "STRUCTURE_DRAWINGS": {
+      "id": "STRUCTURE_DRAWINGS",
+      "icon": "🗺️",
+      "note": "Structural record availability.",
+      "question": "Are certified structural drawings available or attainable?",
+      "options": [
+        {
+          "label": "Certified drawings",
+          "next": "SITE_FLOOD_STUDY"
+        },
+        {
+          "label": "No drawings",
+          "next": "RESULT_REBUILD_STRUCTURE"
+        }
+      ],
+      "links": [
+        {
+          "label": "RedEye",
+          "url": "https://app.redeyedms.com/"
+        }
+      ]
+    },
+    "SENSOR_AGE": {
+      "id": "SENSOR_AGE",
+      "icon": "✅",
+      "note": "Data quality screening.",
+      "question": "Does the current infrastructure cause unacceptable degradation of data quality?",
+      "options": [
+        {
+          "label": "Yes (change target to full knockdown rebuild)",
+          "next": "RESULT_NO_RULE"
+        },
+        {
+          "label": "No",
+          "next": "ISSUE_PRIMARY_TYPE"
+        }
+      ]
+    },
+    "ISSUE_PRIMARY_TYPE": {
+      "id": "ISSUE_PRIMARY_TYPE",
+      "icon": "🧪",
+      "note": "Distinguish equipment-only from structural issues.",
+      "question": "Are site issue/s primarily sensor/equipment related rather than structural?",
+      "options": [
+        {
+          "label": "Yes",
+          "next": "RESULT_SENSOR_UPGRADE"
+        },
+        {
+          "label": "No",
+          "next": "SITE_CRITICALITY"
+        },
+        {
+          "label": "Unknown / mixed",
+          "next": "SITE_CRITICALITY"
+        }
+      ]
+    },
+    "SITE_CRITICALITY": {
+      "id": "SITE_CRITICALITY",
+      "icon": "📌",
+      "note": "Strategic importance of station to warning coverage. For example, forecast locations.",
+      "question": "Is the site strategically critical for flood warning coverage?",
+      "options": [
+        {
+          "label": "High criticality",
+          "next": "RESULT_NO_RULE"
+        },
+        {
+          "label": "Medium criticality",
+          "next": "RESULT_NO_RULE"
+        },
+        {
+          "label": "Low criticality",
+          "next": "SITE_ECONOMICS"
+        },
+        {
+          "label": "Unknown / not assessed",
+          "next": "RESULT_NO_RULE"
+        }
+      ]
+    },
+    "SITE_ECONOMICS": {
+      "id": "SITE_ECONOMICS",
+      "icon": "💰",
+      "note": "Retention vs replacement/relocation branch for lower-criticality sites.",
+      "question": "Is the station economical to retain compared with replacement or relocation?",
+      "options": [
+        {
+          "label": "Yes",
+          "next": "CURRENT_MAINTENANCE"
+        },
+        {
+          "label": "No",
+          "next": "RESULT_DECOMMISSION_OR_RELOCATE"
+        },
+        {
+          "label": "Unknown / not assessed",
+          "next": "RESULT_NO_RULE"
+        }
+      ]
+    },
+    "SITE_FLOOD_STUDY": {
+      "id": "SITE_FLOOD_STUDY",
+      "icon": "📄",
+      "note": "Flood study / geotech suitability branch.",
+      "question": "Is there a flood study available for this site?",
+      "options": [
+        {
+          "label": "Unknown / not assessed",
+          "next": "ENG_APPROVAL"
+        }
+      ]
+    },
+    "CURRENT_MAINTENANCE": {
+      "id": "CURRENT_MAINTENANCE",
+      "question": "Who currently conducts maintenance?",
+      "options": [
+        {
+          "label": "HUB",
+          "next": "RESULT_NO_RULE"
+        },
+        {
+          "label": "Contractor",
+          "next": "RESULT_NO_RULE"
+        },
+        {
+          "label": "Council",
+          "next": "RESULT_NO_RULE"
+        }
+      ],
+      "icon": "🔧"
+    },
+    "ENG_APPROVAL": {
+      "id": "ENG_APPROVAL",
+      "question": "ENG_APPROVAL",
+      "options": [
+        {
+          "label": "ENG_APPROVAL",
+          "next": "RESULT_NO_RULE"
+        }
+      ],
+      "icon": "✅"
+    }
+  },
+  "results": {
+    "RESULT_REBUILD_AGE": {
+      "id": "RESULT_REBUILD_AGE",
+      "icon": "🏗️",
+      "title": "Full knockdown-rebuild",
+      "rationale": "Tower age exceeds the current threshold and is treated as an immediate rebuild trigger."
+    },
+    "RESULT_REBUILD_WHS_MAJOR": {
+      "id": "RESULT_REBUILD_WHS_MAJOR",
+      "icon": "🚨",
+      "title": "Full knockdown-rebuild",
+      "rationale": "A major WHS risk exists and cannot be eliminated without full replacement."
+    },
+    "RESULT_REBUILD_WHS_MODERATE": {
+      "id": "RESULT_REBUILD_WHS_MODERATE",
+      "icon": "🛠️",
+      "title": "Full knockdown-rebuild",
+      "rationale": "A moderate WHS risk cannot be reduced to an acceptable level through targeted remediation."
+    },
+    "RESULT_REBUILD_FLOOD_AND_FOOTING": {
+      "id": "RESULT_REBUILD_FLOOD_AND_FOOTING",
+      "icon": "🌊",
+      "title": "Full knockdown-rebuild",
+      "rationale": "The footing configuration is inadequate and the site is within a major flood zone."
+    },
+    "RESULT_REBUILD_STRUCTURE": {
+      "id": "RESULT_REBUILD_STRUCTURE",
+      "icon": "🏚️",
+      "title": "Full knockdown-rebuild",
+      "rationale": "Poor condition or lack of structural drawings is treated as a fatal structural uncertainty."
+    },
+    "RESULT_SENSOR_UPGRADE": {
+      "id": "RESULT_SENSOR_UPGRADE",
+      "icon": "🛰️",
+      "title": "Sensor / equipment upgrade",
+      "rationale": "The primary issue appears to be equipment age or reliability rather than tower structure."
+    },
+    "RESULT_DECOMMISSION_OR_RELOCATE": {
+      "id": "RESULT_DECOMMISSION_OR_RELOCATE",
+      "icon": "🚚",
+      "title": "Consider decommissioning or relocation",
+      "rationale": "For lower-criticality sites, retention may not be justified if the station is uneconomical to keep."
+    },
+    "RESULT_NO_RULE": {
+      "id": "RESULT_NO_RULE",
+      "icon": "❓",
+      "title": "No current recommendation",
+      "rationale": "This scenario is not yet covered by the current decision tree. Record the case and add a new rule later.",
+      "isMissingRule": true
+    }
+  },
+  "changeLog": [
+    {
+      "changedAt": "2026-06-10T23:05:40.285Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS"
+    },
+    {
+      "changedAt": "2026-06-11T00:37:46.498Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-11T06:49:27.564Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-11T19:42:47.890Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FLOOD_MAJOR_ZONE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-11T23:08:49.702Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "AGE_TOWER",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-11T23:24:49.834Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-11T23:26:07.317Z",
+      "type": "payloadDeleted",
+      "payloadType": "result",
+      "payloadId": "RESULT_REBUILD_FOOTING"
+    },
+    {
+      "changedAt": "2026-06-11T23:27:53.783Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "AGE_TOWER",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-11T23:28:00.376Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "AGE_TOWER",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:25:57.565Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "ISSUE_PRIMARY_TYPE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:27:05.316Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "ISSUE_PRIMARY_TYPE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:33:08.511Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:33:11.215Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:33:19.271Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:33:21.639Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:35:46.113Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:40:35.965Z",
+      "type": "payloadEdited",
+      "payloadType": "result",
+      "payloadId": "RESULT_REBUILD_STRUCTURE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:40:37.268Z",
+      "type": "payloadEdited",
+      "payloadType": "result",
+      "payloadId": "RESULT_REBUILD_STRUCTURE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:41:24.611Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_CONDITION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:41:26.715Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_CONDITION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:49:44.157Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:49:46.381Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:52:32.309Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FOOTING_RAG_BOLTS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:52:35.013Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FOOTING_RAG_BOLTS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:53:29.645Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "AGE_TOWER",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:53:31.365Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "AGE_TOWER",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:59:02.357Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T02:59:05.413Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SENSOR_AGE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:01:44.671Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_SUITABILITY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:01:46.351Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_SUITABILITY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:02:00.951Z",
+      "type": "payloadDeleted",
+      "payloadType": "result",
+      "payloadId": "RESULT_MAJOR_UPGRADE"
+    },
+    {
+      "changedAt": "2026-06-15T03:02:10.871Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FLOOD_MAJOR_ZONE",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:13:30.826Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "WHS_MAJOR_ELIMINATION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:14:13.355Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "WHS_MAJOR_ELIMINATION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:14:18.610Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "WHS_MAJOR_ELIMINATION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:14:33.827Z",
+      "type": "payloadDeleted",
+      "payloadType": "result",
+      "payloadId": "RESULT_TARGETED_WHS_REMEDIATION"
+    },
+    {
+      "changedAt": "2026-06-15T03:14:37.123Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "AGE_TOWER",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:14:39.083Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "AGE_TOWER",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:17:59.452Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "WHS_MODERATE_ELIMINATION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:18:02.732Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "WHS_MODERATE_ELIMINATION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:37:39.617Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_SUITABILITY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:37:41.633Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_SUITABILITY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T03:38:34.417Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_SUITABILITY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:07:51.615Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:07:53.151Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:11:03.269Z",
+      "type": "payloadRenamed",
+      "payloadType": "node",
+      "previousPayloadId": "SITE_SUITABILITY",
+      "newPayloadId": "SITE_FLOOD_STUDY"
+    },
+    {
+      "changedAt": "2026-06-15T04:11:58.688Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_FLOOD_STUDY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:12:00.266Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_FLOOD_STUDY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:13:27.868Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_CRITICALITY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:16:30.248Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:16:33.439Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:27:31.887Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "WHS_MAJOR_ELIMINATION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-15T04:27:35.743Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "WHS_MAJOR_ELIMINATION",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-17T02:43:01.830Z",
+      "type": "payloadCreated",
+      "payloadType": "node",
+      "payloadId": "CURRENT_MAINTENANCE"
+    },
+    {
+      "changedAt": "2026-06-17T02:45:43.832Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_ECONOMICS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-17T02:45:46.192Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_ECONOMICS",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-17T23:40:35.288Z",
+      "type": "payloadDeleted",
+      "payloadType": "result",
+      "payloadId": "RESULT_MONITOR"
+    },
+    {
+      "changedAt": "2026-06-17T23:44:35.043Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_FLOOD_STUDY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-17T23:44:37.202Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_FLOOD_STUDY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-17T23:44:47.630Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_FLOOD_STUDY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-17T23:46:13.624Z",
+      "type": "payloadCreated",
+      "payloadType": "node",
+      "payloadId": "NODE_1"
+    },
+    {
+      "changedAt": "2026-06-17T23:55:50.619Z",
+      "type": "payloadDeleted",
+      "payloadType": "node",
+      "payloadId": "NODE_1"
+    },
+    {
+      "changedAt": "2026-06-18T00:08:38.456Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_CRITICALITY",
+      "editMode": "form"
+    },
+    {
+      "changedAt": "2026-06-18T00:08:40.700Z",
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_CRITICALITY",
+      "editMode": "form"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v35.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": null,
+      "branchId": "main",
+      "changedAt": "2026-06-18T01:31:21.545Z"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "result",
+      "payloadId": "RESULT_REBUILD_AGE",
+      "editMode": "form",
+      "changedAt": "2026-06-18T02:18:38.978Z",
+      "treeVersion": "v35.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": null,
+      "branchId": "main"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v36.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main",
+      "changedAt": "2026-06-18T02:19:43.504Z"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v37.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main",
+      "changedAt": "2026-06-18T05:46:55.979Z"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FLOOD_MAJOR_ZONE",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:48:34.721Z",
+      "treeVersion": "v37.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FLOOD_MAJOR_ZONE",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:48:35.596Z",
+      "treeVersion": "v37.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v38.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main",
+      "changedAt": "2026-06-18T05:48:35.611Z"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FLOOD_MAJOR_ZONE",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:50:42.978Z",
+      "treeVersion": "v38.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "FLOOD_MAJOR_ZONE",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:50:44.271Z",
+      "treeVersion": "v38.2",
+      "versionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v39.2",
+      "versionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main",
+      "changedAt": "2026-06-18T05:50:44.283Z"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:56:37.939Z",
+      "treeVersion": "v39.2",
+      "versionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:56:49.457Z",
+      "treeVersion": "v39.2",
+      "versionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "parentVersionHash": "sha256:0fae267e6c0ba794bd3e49df9d059b199b02a2c3211ba607c99f5b83d095ecad",
+      "branchId": "main"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v40.2",
+      "versionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "parentVersionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "branchId": "main",
+      "changedAt": "2026-06-18T05:56:49.473Z"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:57:53.195Z",
+      "treeVersion": "v40.2",
+      "versionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "parentVersionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "branchId": "main"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "STRUCTURE_DRAWINGS",
+      "editMode": "form",
+      "changedAt": "2026-06-18T05:57:55.141Z",
+      "treeVersion": "v40.2",
+      "versionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "parentVersionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "branchId": "main"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v41.2",
+      "versionHash": "sha256:91001d086a3f2365f1c49b73d8ed4155daa235a87e80297af3dbabcfd66364bd",
+      "parentVersionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "branchId": "main",
+      "changedAt": "2026-06-18T05:57:55.152Z"
+    },
+    {
+      "type": "payloadCreated",
+      "payloadType": null,
+      "payloadId": "ENG_APPROVAL",
+      "changedAt": "2026-06-18T05:58:39.238Z",
+      "treeVersion": "v41.2",
+      "versionHash": "sha256:91001d086a3f2365f1c49b73d8ed4155daa235a87e80297af3dbabcfd66364bd",
+      "parentVersionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "branchId": "main"
+    },
+    {
+      "type": "payloadDeleted",
+      "payloadType": "result",
+      "payloadId": "ENG_APPROVAL",
+      "changedAt": "2026-06-18T05:59:59.421Z",
+      "treeVersion": "v41.2",
+      "versionHash": "sha256:91001d086a3f2365f1c49b73d8ed4155daa235a87e80297af3dbabcfd66364bd",
+      "parentVersionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "branchId": "main"
+    },
+    {
+      "type": "payloadCreated",
+      "payloadType": null,
+      "payloadId": "ENG_APPROVAL",
+      "changedAt": "2026-06-18T06:00:39.747Z",
+      "treeVersion": "v41.2",
+      "versionHash": "sha256:91001d086a3f2365f1c49b73d8ed4155daa235a87e80297af3dbabcfd66364bd",
+      "parentVersionHash": "sha256:fe9905c20afa634c42fcd71465e5c3bd5f67887331b5d79ad7ac583ef83ac46b",
+      "branchId": "main"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v42.2",
+      "versionHash": "sha256:b06ecdb6f4f7b3c7deeb2aa25c8d1170f9e3cdc9e9e5df9c0780a3aaf277180b",
+      "parentVersionHash": "sha256:91001d086a3f2365f1c49b73d8ed4155daa235a87e80297af3dbabcfd66364bd",
+      "branchId": "main",
+      "changedAt": "2026-06-18T06:23:16.450Z"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_FLOOD_STUDY",
+      "editMode": "form",
+      "changedAt": "2026-06-18T06:28:45.465Z",
+      "treeVersion": "v42.2",
+      "versionHash": "sha256:b06ecdb6f4f7b3c7deeb2aa25c8d1170f9e3cdc9e9e5df9c0780a3aaf277180b",
+      "parentVersionHash": "sha256:91001d086a3f2365f1c49b73d8ed4155daa235a87e80297af3dbabcfd66364bd",
+      "branchId": "main"
+    },
+    {
+      "type": "payloadEdited",
+      "payloadType": "node",
+      "payloadId": "SITE_FLOOD_STUDY",
+      "editMode": "form",
+      "changedAt": "2026-06-18T06:28:46.535Z",
+      "treeVersion": "v42.2",
+      "versionHash": "sha256:b06ecdb6f4f7b3c7deeb2aa25c8d1170f9e3cdc9e9e5df9c0780a3aaf277180b",
+      "parentVersionHash": "sha256:91001d086a3f2365f1c49b73d8ed4155daa235a87e80297af3dbabcfd66364bd",
+      "branchId": "main"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v43.2",
+      "versionHash": "sha256:0dc8c03a5ad90b6c10b48081028d36d06425fb645e11f78b1d68c52f3e6f2f56",
+      "parentVersionHash": "sha256:b06ecdb6f4f7b3c7deeb2aa25c8d1170f9e3cdc9e9e5df9c0780a3aaf277180b",
+      "branchId": "main",
+      "changedAt": "2026-06-18T06:28:46.552Z"
+    },
+    {
+      "type": "treeSaved",
+      "treeVersion": "v44.2",
+      "versionHash": "sha256:0dc8c03a5ad90b6c10b48081028d36d06425fb645e11f78b1d68c52f3e6f2f56",
+      "parentVersionHash": "sha256:0dc8c03a5ad90b6c10b48081028d36d06425fb645e11f78b1d68c52f3e6f2f56",
+      "branchId": "main",
+      "changedAt": "2026-06-18T06:29:04.713Z"
+    }
+  ],
+  "layout": {
+    "positions": {
+      "AGE_TOWER": {
+        "x": 69.04,
+        "y": 474.19
+      },
+      "WHS_RESULT": {
+        "x": 464.4,
+        "y": 466.8
+      },
+      "WHS_MAJOR_ELIMINATION": {
+        "x": 668.56,
+        "y": 705.22
+      },
+      "WHS_MODERATE_ELIMINATION": {
+        "x": 689.8,
+        "y": 250.26
+      },
+      "FOOTING_RAG_BOLTS": {
+        "x": 881,
+        "y": 477.71
+      },
+      "FLOOD_MAJOR_ZONE": {
+        "x": 1105.82,
+        "y": 251.07
+      },
+      "STRUCTURE_CONDITION": {
+        "x": 1138.27,
+        "y": 715.85
+      },
+      "STRUCTURE_DRAWINGS": {
+        "x": 1433.18,
+        "y": 251.4
+      },
+      "SENSOR_AGE": {
+        "x": 1573.87,
+        "y": 716.99
+      },
+      "ISSUE_PRIMARY_TYPE": {
+        "x": 1887.74,
+        "y": 716.58
+      },
+      "SITE_CRITICALITY": {
+        "x": 2307.7,
+        "y": 718.79
+      },
+      "SITE_ECONOMICS": {
+        "x": 2725.68,
+        "y": 725.12
+      },
+      "SITE_FLOOD_STUDY": {
+        "x": 1925.16,
+        "y": 250.42
+      },
+      "CURRENT_MAINTENANCE": {
+        "x": 3112.18,
+        "y": 726.21
+      },
+      "ENG_APPROVAL": {
+        "x": 2309.05,
+        "y": 257.72
+      },
+      "RESULT_REBUILD_AGE": {
+        "x": 68.52,
+        "y": 658.45
+      },
+      "RESULT_REBUILD_WHS_MAJOR": {
+        "x": 674.02,
+        "y": 820.98
+      },
+      "RESULT_REBUILD_WHS_MODERATE": {
+        "x": 687.21,
+        "y": 110.63
+      },
+      "RESULT_REBUILD_FLOOD_AND_FOOTING": {
+        "x": 1108.71,
+        "y": 116.6
+      },
+      "RESULT_REBUILD_STRUCTURE": {
+        "x": 1283.44,
+        "y": 402.68
+      },
+      "RESULT_SENSOR_UPGRADE": {
+        "x": 1881.9,
+        "y": 849.84
+      },
+      "RESULT_DECOMMISSION_OR_RELOCATE": {
+        "x": 2729.81,
+        "y": 870.98
+      },
+      "RESULT_NO_RULE": {
+        "x": 2307.82,
+        "y": 485.2
+      }
+    }
+  },
+  "branchId": "main",
+  "parentVersionHash": "sha256:0dc8c03a5ad90b6c10b48081028d36d06425fb645e11f78b1d68c52f3e6f2f56",
+  "versionHash": "sha256:0dc8c03a5ad90b6c10b48081028d36d06425fb645e11f78b1d68c52f3e6f2f56"
+}
