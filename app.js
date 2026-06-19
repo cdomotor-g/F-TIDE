@@ -10,6 +10,7 @@
 
   var state = {
     tree: null,
+    changeLog: [],
     currentNodeId: null,
     history: [],
     currentMode: 'node',
@@ -202,271 +203,18 @@
     els.saveSessionBtn.addEventListener('click', saveCurrentSession);
     els.showSchemaBtn.addEventListener('click', openSchemaModal);
     els.closeSchemaBtn.addEventListener('click', closeSchemaModal);
-      // Built-in fallback schema (used when running from file:// where fetch is blocked)
-      var FALLBACK_TREE_SCHEMA = {
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "title": "Decision Tree Schema v2",
-        "type": "object",
-        "required": [
-          "startNode",
-          "nodes",
-          "results"
-        ],
-        "properties": {
-          "title": {
-            "type": "string"
-          },
-          "version": {
-            "type": "string"
-          },
-          "versionHash": {
-            "type": "string"
-          },
-          "parentVersionHash": {
-            "type": [
-              "string",
-              "null"
-            ]
-          },
-          "branchId": {
-            "type": "string"
-          },
-          "startNode": {
-            "type": "string",
-            "description": "Must match a node ID"
-          },
-          "nodes": {
-            "type": "object",
-            "description": "Map of nodeId -> node",
-            "additionalProperties": {
-              "$ref": "#/definitions/node"
-            }
-          },
-          "results": {
-            "type": "object",
-            "description": "Map of resultId -> result",
-            "additionalProperties": {
-              "$ref": "#/definitions/result"
-            }
-          },
-          "changeLog": {
-            "type": "array",
-            "items": {
-              "$ref": "#/definitions/changeLogEntry"
-            }
-          },
-          "layout": {
-            "type": "object",
-            "description": "Optional saved tree-view layout positions.",
-            "additionalProperties": true,
-            "properties": {
-              "positions": {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "object",
-                  "required": ["x", "y"],
-                  "properties": {
-                    "x": { "type": "number" },
-                    "y": { "type": "number" }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "definitions": {
-          "node": {
-            "type": "object",
-            "required": [
-              "id",
-              "question",
-              "options"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "question": {
-                "type": "string"
-              },
-              "note": {
-                "type": "string"
-              },
-              "icon": {
-                "type": "string"
-              },
-              "options": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                  "$ref": "#/definitions/option"
-                }
-              },
-              "links": {
-                "type": "array",
-                "items": {
-                  "type": "object",
-                  "required": [
-                    "label",
-                    "url"
-                  ],
-                  "additionalProperties": false,
-                  "properties": {
-                    "label": {
-                      "type": "string"
-                    },
-                    "url": {
-                      "type": "string",
-                      "format": "uri"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "option": {
-            "type": "object",
-            "required": [
-              "label",
-              "next"
-            ],
-            "additionalProperties": false,
-            "properties": {
-              "label": {
-                "type": "string"
-              },
-              "next": {
-                "type": "object",
-                "required": [
-                  "type",
-                  "id"
-                ],
-                "additionalProperties": false,
-                "properties": {
-                  "type": {
-                    "type": "string",
-                    "enum": [
-                      "node",
-                      "result"
-                    ]
-                  },
-                  "id": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          },
-          "result": {
-            "type": "object",
-            "required": [
-              "id",
-              "title"
-            ],
-            "additionalProperties": true,
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "title": {
-                "type": "string"
-              },
-              "icon": {
-                "type": "string"
-              },
-              "description": {
-                "type": "string"
-              },
-              "rationale": {
-                "type": "string"
-              },
-              "isMissingRule": {
-                "type": "boolean"
-              }
-            }
-          },
-          "changeLogEntry": {
-            "type": "object",
-            "required": [
-              "changedAt",
-              "type"
-            ],
-            "additionalProperties": true,
-            "properties": {
-              "changedAt": {
-                "type": "string",
-                "format": "date-time"
-              },
-              "type": {
-                "type": "string",
-                "enum": [
-                  "payloadEdited",
-                  "payloadDeleted",
-                  "payloadCreated",
-                  "payloadRenamed",
-                  "missingRuleMappedToExistingResult",
-                  "treeForked",
-                  "treeSaved"
-                ]
-              },
-              "payloadType": {
-                "type": "string",
-                "enum": [
-                  "node",
-                  "result"
-                ]
-              },
-              "payloadId": {
-                "type": "string"
-              },
-              "editMode": {
-                "type": "string"
-              },
-              "treeVersion": {
-                "type": "string"
-              },
-              "versionHash": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "parentVersionHash": {
-                "type": [
-                  "string",
-                  "null"
-                ]
-              },
-              "branchId": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      };
-
       async function openSchemaModal() {
         if (!els.treeSchemaText) return;
         els.treeSchemaText.textContent = 'Loading schema…';
-        var usedFallback = false;
-        if (location.protocol === 'file:') {
-          usedFallback = true;
-          els.treeSchemaText.textContent = JSON.stringify(FALLBACK_TREE_SCHEMA, null, 2);
-        } else {
-          try {
-            var resp = await fetch('tree_schema.json', { cache: 'no-cache' });
-            if (!resp.ok) throw new Error('tree_schema.json not found');
-            var schema = await resp.json();
-            els.treeSchemaText.textContent = JSON.stringify(schema, null, 2);
-          } catch (err) {
-            usedFallback = true;
-            els.treeSchemaText.textContent = JSON.stringify(FALLBACK_TREE_SCHEMA, null, 2) +
-              "\n\n// Note: Could not load tree_schema.json (" + (err && err.message ? err.message : 'fetch failed') + ").\n// You're likely opening this HTML directly from your file system. Browsers block fetch() in file:// pages.\n// To load the external file, serve this folder via a local web server.";
-          }
+        try {
+          var resp = await fetch('tree_schema.json', { cache: 'no-cache' });
+          if (!resp.ok) throw new Error('tree_schema.json not found');
+          var schema = await resp.json();
+          els.treeSchemaText.textContent = JSON.stringify(schema, null, 2);
+        } catch (err) {
+          els.treeSchemaText.textContent = '// Could not load tree_schema.json: ' + (err && err.message ? err.message : 'fetch failed');
         }
         if (els.schemaModalOverlay) els.schemaModalOverlay.classList.remove('hidden');
-        // Small accessibility nicety: move focus to the close button
         setTimeout(function(){ if (els.closeSchemaBtn) els.closeSchemaBtn.focus(); }, 0);
       }
       function closeSchemaModal() {
@@ -1101,6 +849,8 @@
 
   function loadTreeFromText(fileName, rawText) {
     var parsed = JSON.parse(rawText);
+    state.changeLog = Array.isArray(parsed.changeLog) ? parsed.changeLog : [];
+    delete parsed.changeLog;
     var warnings = validateTree(parsed);
     state.tree = parsed;
     state.lastTreeSnapshot = JSON.stringify(parsed);
@@ -1533,7 +1283,6 @@
     if (!sourceNode || !sourceOption) { els.missingRuleSaveMessage.textContent = 'Could not find the source branch to update.'; return; }
     var prev = sourceOption.next;
     sourceOption.next = selectedResultId;
-    if (!Array.isArray(state.tree.changeLog)) state.tree.changeLog = [];
     appendChangeLog({ type: 'missingRuleMappedToExistingResult', sourceNodeId: sourceNode.id, optionLabel: sourceOption.label, previousTarget: prev, newTarget: selectedResultId, note: els.missingRuleText.value.trim() || null, payloadType: 'node', payloadId: sourceNode.id });
     els.missingRuleSaveMessage.textContent = 'Rule applied in the current session. Click Save tree.json to persist it.';
     renderResult(state.tree.results[selectedResultId]);
@@ -2200,7 +1949,6 @@ function setEditorMode(mode) {
 
   function finalizeAppliedPayloadEdit(edited, saveAfter, warnings) {
     if (state.currentMode === 'node') state.tree.nodes[edited.id] = edited; else state.tree.results[edited.id] = edited;
-    if (!Array.isArray(state.tree.changeLog)) state.tree.changeLog = [];
     appendChangeLog({ type: 'payloadEdited', payloadType: state.currentMode, payloadId: edited.id, editMode: state.editorMode });
     if (state.currentMode === 'node') { state.currentPayload = edited; renderNode(); }
     else { state.currentPayload = edited; state.currentResult = edited; renderResult(edited); }
@@ -2219,7 +1967,6 @@ function setEditorMode(mode) {
 
   function finalizeCreatedPayload(created, warnings) {
     if (state.createMode === 'node') state.tree.nodes[created.id] = created; else state.tree.results[created.id] = created;
-    if (!Array.isArray(state.tree.changeLog)) state.tree.changeLog = [];
     appendChangeLog({ type: 'payloadCreated', payloadType: state.createMode, payloadId: created.id });
     els.createPayloadMessage.textContent = (state.createMode === 'node' ? 'Question node ' : 'Result node ') + created.id + ' created.' + (warnings && warnings.length ? ' ' + formatTreeValidationWarningSummary(state.tree) : '');
     els.createPayloadMessage.className = 'footnote good';
@@ -2287,7 +2034,6 @@ function setEditorMode(mode) {
       if (state.tree.startNode === oldId) state.tree.startNode = newId;
       var warnings = validateTree(state.tree);
 
-      if (!Array.isArray(state.tree.changeLog)) state.tree.changeLog = [];
       appendChangeLog({ type: 'payloadRenamed', payloadType: payloadType, payloadId: newId, previousPayloadId: oldId, newPayloadId: newId });
 
       if (payloadType === 'node') {
@@ -2358,7 +2104,6 @@ function setEditorMode(mode) {
     if (payloadType === 'node') delete state.tree.nodes[payloadId]; else delete state.tree.results[payloadId];
     try {
       var warnings = validateTree(state.tree);
-      if (!Array.isArray(state.tree.changeLog)) state.tree.changeLog = [];
       appendChangeLog({ type: 'payloadDeleted', payloadType: payloadType, payloadId: payloadId });
       state.history = [];
       state.currentNodeId = state.tree.startNode;
@@ -2446,11 +2191,20 @@ function setEditorMode(mode) {
       branchId: state.tree.branchId
     });
     els.toolVersion.textContent = formatRuleSetLabel(state.tree);
-    var content = JSON.stringify(state.tree, null, 2);
-    downloadFile(content, 'tree.json', 'application/json');
+    var treeContent = JSON.stringify(state.tree, null, 2);
+    downloadFile(treeContent, 'tree.json', 'application/json');
+    var changelogContent = buildChangelogJson();
+    downloadFile(changelogContent, 'changelog.json', 'application/json');
     state.lastTreeSnapshot = JSON.stringify(state.tree);
     updateEditorDirtyState();
-    setSaveStatus('Downloaded updated tree.json with version hash.');
+    setSaveStatus('Downloaded tree.json and changelog.json with version hash.');
+  }
+
+  function buildChangelogJson() {
+    var versionChain = state.changeLog
+      .filter(function (e) { return e.type === 'treeSaved'; })
+      .map(function (e) { return { version: e.treeVersion || '', versionHash: e.versionHash || null, parentVersionHash: e.parentVersionHash || null, branchId: e.branchId || 'main', savedAt: e.changedAt || '' }; });
+    return JSON.stringify({ versionChain: versionChain, entries: state.changeLog }, null, 2);
   }
 
   async function forkCurrentTreeBranch() {
@@ -2551,14 +2305,13 @@ function setEditorMode(mode) {
 
   function appendChangeLog(entry) {
     if (!state.tree) return;
-    if (!Array.isArray(state.tree.changeLog)) state.tree.changeLog = [];
     var payload = clone(entry || {});
     payload.changedAt = payload.changedAt || new Date().toISOString();
     if (typeof payload.treeVersion === 'undefined' && state.tree.version) payload.treeVersion = state.tree.version;
     if (typeof payload.versionHash === 'undefined') payload.versionHash = state.tree.versionHash || null;
     if (typeof payload.parentVersionHash === 'undefined') payload.parentVersionHash = state.tree.parentVersionHash || null;
     if (typeof payload.branchId === 'undefined') payload.branchId = sanitizeBranchId(state.tree.branchId || 'main');
-    state.tree.changeLog.push(payload);
+    state.changeLog.push(payload);
   }
 
   function incrementVersionString(version) {
@@ -2680,20 +2433,7 @@ function setEditorMode(mode) {
     return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />' +
       '<meta name="viewport" content="width=device-width, initial-scale=1.0" />' +
       '<title>' + escapeHtml((state.tree.title || 'Assessment') + ' - ' + meta.stationName) + '</title>' +
-      '<style>' +
-      'body{font-family:Segoe UI,Arial,sans-serif;margin:32px;color:#111827}' +
-      'h1{margin-bottom:8px}h2{margin:0 0 8px 0;font-size:18px}' +
-      '.meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-bottom:24px}' +
-      '.box{border:1px solid #d1d5db;border-radius:10px;padding:14px;margin-bottom:18px}' +
-      'table{width:100%;border-collapse:collapse;font-size:12px;line-height:1.25;table-layout:fixed}th,td{border:1px solid #d1d5db;text-align:left;padding:6px 7px;vertical-align:top;word-break:break-word}th{background:#f3f4f6;font-size:11px;line-height:1.2}' +
-      '.table-section{margin-top:14px}.table-section h3{margin:0 0 6px 0;font-size:14px}.tree-version{margin:0 0 10px 0;color:#374151;font-size:12px}' +
-      '.tree-snapshot table{font-size:11px}.tree-snapshot th,.tree-snapshot td{padding:4px 5px}.tree-snapshot h3{font-size:13px}' +
-      '.icon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;border:1px solid #cbd5e1;margin-right:6px;font-weight:700}' +
-      '.report-link-list{margin-top:8px;font-size:13px;color:#1f2937}' +
-      '.report-link-list div{margin-top:4px}' +
-      '.report-link-list a{color:#2563eb;text-decoration:none}' +
-      '.foot{margin-top:24px;color:#4b5563;font-size:12px}@media print{body{margin:14mm}}' +
-      '</style></head><body>' +
+      '<style>' + (window.REPORT_CSS || '') + '</style></head><body>' +
       '<h1>' + escapeHtml(state.tree.title || 'FWIN-TIDE Assessment') + '</h1>' +
       '<p>Generated ' + escapeHtml(dateText) + '</p>' +
       '<section class="box"><h2>Assessment details</h2><div class="meta">' +
