@@ -274,7 +274,6 @@
       alert('Tree View requires Cytoscape to load. Check your internet connection.');
       return;
     }
-    ensureTreeLayoutState(state.tree);
     els.treeViewOverlay.classList.remove('hidden');
     setTimeout(function () {
       refreshTreeView();
@@ -443,33 +442,38 @@
     });
     return uniqueStrings(warnings);
   }
-  function ensureTreeLayoutState(tree) {
-    if (!tree) return;
-    if (!tree.layout || typeof tree.layout !== 'object' || Array.isArray(tree.layout)) tree.layout = {};
-    if (!tree.layout.positions || typeof tree.layout.positions !== 'object' || Array.isArray(tree.layout.positions)) tree.layout.positions = {};
-  }
   function getStoredTreePositions(tree) {
     var positions = {};
-    if (!tree || !tree.layout || !tree.layout.positions) return positions;
-    Object.keys(tree.layout.positions).forEach(function (id) {
-      var pos = tree.layout.positions[id];
-      if (!pos || typeof pos !== 'object') return;
-      var x = Number(pos.x);
-      var y = Number(pos.y);
-      if (!isFinite(x) || !isFinite(y)) return;
-      positions[id] = { x: x, y: y };
+    if (!tree) return positions;
+    Object.keys(tree.nodes || {}).forEach(function (id) {
+      var node = tree.nodes[id];
+      var x = Number(node && node.x);
+      var y = Number(node && node.y);
+      if (isFinite(x) && isFinite(y)) positions[id] = { x: x, y: y };
+    });
+    Object.keys(tree.results || {}).forEach(function (id) {
+      var result = tree.results[id];
+      var x = Number(result && result.x);
+      var y = Number(result && result.y);
+      if (isFinite(x) && isFinite(y)) positions[id] = { x: x, y: y };
     });
     return positions;
   }
   function persistTreeViewPositions(options) {
     if (!state.tree || !treeViewCy) return;
-    ensureTreeLayoutState(state.tree);
-    var positions = {};
     treeViewCy.nodes().forEach(function (node) {
       var pos = node.position();
-      positions[node.id()] = { x: Number(pos.x.toFixed(2)), y: Number(pos.y.toFixed(2)) };
+      var x = Number(pos.x.toFixed(2));
+      var y = Number(pos.y.toFixed(2));
+      var id = node.id();
+      if (state.tree.nodes[id]) {
+        state.tree.nodes[id].x = x;
+        state.tree.nodes[id].y = y;
+      } else if (state.tree.results[id]) {
+        state.tree.results[id].x = x;
+        state.tree.results[id].y = y;
+      }
     });
-    state.tree.layout.positions = positions;
     if (options && options.silent) return;
     setSaveStatus((options && options.message) || 'Tree layout updated. Save tree.json to persist.');
   }
@@ -547,7 +551,6 @@
     els.treeViewQuestionsOnlyBtn.style.backgroundColor = '';
     els.treeViewQuestionsOnlyBtn.style.borderColor = '';
     els.treeViewSearchInput.value = '';
-    ensureTreeLayoutState(state.tree);
     initTreeView();
     if (!treeViewCy) return;
     treeViewCy.elements().remove();
@@ -2261,7 +2264,8 @@ function setEditorMode(mode) {
     delete snapshot.parentVersionHash;
     delete snapshot.branchId;
     delete snapshot.changeLog;
-    delete snapshot.layout;
+    Object.keys(snapshot.nodes || {}).forEach(function (id) { delete snapshot.nodes[id].x; delete snapshot.nodes[id].y; });
+    Object.keys(snapshot.results || {}).forEach(function (id) { delete snapshot.results[id].x; delete snapshot.results[id].y; });
     return sortKeysDeep(snapshot);
   }
 
