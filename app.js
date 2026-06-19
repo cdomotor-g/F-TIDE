@@ -14,6 +14,7 @@
     history: [],
     currentMode: 'node',
     currentPayload: null,
+    comments: {},
     currentResult: null,
     loadedFileName: 'tree.json',
     editorMode: 'form',
@@ -155,6 +156,14 @@
 
   function bindEvents() {
     els.jsonFileInput.addEventListener('change', handleJsonFileSelected);
+    var commentEl = document.getElementById('nodeComment');
+    if (commentEl) {
+      commentEl.addEventListener('input', function () {
+        if (state.currentNodeId) {
+          state.comments[state.currentNodeId] = commentEl.value;
+        }
+      });
+    }
     if (els.saveTreeBtn) els.saveTreeBtn.addEventListener('click', saveTreeJson);
     if (els.forkTreeBtn) els.forkTreeBtn.addEventListener('click', forkCurrentTreeBranch);
     els.restartBtn.addEventListener('click', restart);
@@ -1228,6 +1237,12 @@
     els.questionView.classList.remove('hidden');
     els.resultView.classList.add('hidden');
     els.questionText.textContent = node.question;
+
+    var commentEl = document.getElementById('nodeComment');
+    if (commentEl) {
+      commentEl.value = state.comments[state.currentNodeId] || '';
+    }
+
     els.questionIcon.textContent = getIcon(node);
     renderSupportLinks(node);
     renderOptionTargetRows(node);
@@ -1238,7 +1253,14 @@
   }
 
   function selectOption(node, option) {
-    state.history.push({ nodeId: node.id, question: node.question, answer: option.label, next: option.next, icon: getIcon(node) });
+    state.history.push({
+      nodeId: node.id,
+      question: node.question,
+      answer: option.label,
+      next: option.next,
+      icon: getIcon(node),
+      comment: state.comments[node.id] || ""
+    });
     if (state.tree.nodes[option.next]) { state.currentNodeId = option.next; renderNode(); return; }
     if (state.tree.results[option.next]) { renderResult(state.tree.results[option.next]); return; }
     renderResult({ id: 'RESULT_NO_RULE', title: 'No current recommendation', rationale: "The selected option points to '" + option.next + "', which does not exist in nodes or results.", isMissingRule: true });
@@ -1410,7 +1432,8 @@
       var text = document.createElement('div'); text.textContent = step.question;
       wrap.appendChild(icon); wrap.appendChild(text); tdQuestion.appendChild(wrap);
       var tdAnswer = document.createElement('td'); tdAnswer.textContent = step.answer;
-      tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer);
+      var tdComment = document.createElement('td'); tdComment.textContent = step.comment || '';
+      tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdComment);
       els.pathTableBody.appendChild(tr);
     });
     if (result) {
@@ -1525,7 +1548,7 @@
       treeVersion: state.tree ? (state.tree.version || '') : '',
       treeVersionHash: state.tree ? (state.tree.versionHash || '') : '',
       branchId: state.tree ? (state.tree.branchId || 'main') : 'main',
-      path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, next: step.next, icon: step.icon }; }),
+      path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon }; }),
       selectedResultId: els.missingRuleSelect.value || null,
       proposedRecommendation: note
     };
@@ -1588,16 +1611,26 @@
     performCloseEditor();
   }
 
-  function setEditorMode(mode) {
-    state.editorMode = mode === 'raw' ? 'raw' : 'form';
-    var isForm = state.editorMode === 'form';
-    els.editorFormTab.classList.toggle('active', isForm);
-    els.editorRawTab.classList.toggle('active', !isForm);
-    els.nodeEditorForm.classList.toggle('hidden', !isForm);
-    els.nodeEditorRawWrap.classList.toggle('hidden', isForm);
-    if (isForm) renderValidationSummary('edit'); else hideValidationSummary('edit');
-    updateEditorDirtyState();
+function setEditorMode(mode) {
+  var wasRaw = state.editorMode === 'raw';
+  state.editorMode = mode === 'raw' ? 'raw' : 'form';
+  var isForm = state.editorMode === 'form';
+  if (isForm && wasRaw && els.nodeEditorText) {
+    try {
+      var parsed = JSON.parse(els.nodeEditorText.value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        state.editorDraft = parsed;
+      }
+    } catch (_e) { /* leave editorDraft unchanged if raw JSON is invalid */ }
   }
+  els.editorFormTab.classList.toggle('active', isForm);
+  els.editorRawTab.classList.toggle('active', !isForm);
+  els.nodeEditorForm.classList.toggle('hidden', !isForm);
+  els.nodeEditorRawWrap.classList.toggle('hidden', isForm);
+  if (isForm) renderPayloadForm('edit');
+  if (isForm) renderValidationSummary('edit'); else hideValidationSummary('edit');
+  updateEditorDirtyState();
+}
 
   function openCreatePayloadPanel(mode, options) {
     if (!state.tree) return;
@@ -1606,9 +1639,7 @@
     state.createDraft = buildCreateDraft(state.createMode);
     state.createDraftBaseline = clone(state.createDraft);
     els.createPayloadTitle.textContent = state.createMode === 'node' ? 'Create new question node' : 'Create new result node';
-    els.editorModalTitle.textContent = opts.source === 'tree-view'
-      ? (state.createMode === 'node' ? 'Create new question node' : 'Create new result node')
-      : (state.currentMode === 'node' ? 'Edit current node' : 'Edit current result');
+    els.editorModalTitle.textContent = state.createMode === 'node' ? 'Create new question node' : 'Create new result node';
     els.createPayloadMessage.textContent = '';
     els.createPayloadMessage.className = 'footnote';
     if (opts.source !== 'tree-view') {
@@ -2573,8 +2604,12 @@
     saveCurrentSession();
     var now = new Date();
     var reportHtml = buildReportHtml({ generatedAt: now, assessorInitials: els.assessorInitialsInput.value.trim(), stationNumber: els.stationNumberInput.value.trim(), stationName: els.stationNameInput.value.trim() });
-    var fileStem = slugify((els.stationNumberInput.value.trim() || 'station') + '_' + (els.stationNameInput.value.trim() || 'assessment') + '_' + (state.assessmentId || 'run'));
-    downloadFile(reportHtml, fileStem + '_assessment_report.html', 'text/html');
+    var fileStem = slugify(
+      (els.stationNumberInput.value.trim() || 'station') + '_' +
+      (els.stationNameInput.value.trim() || 'site') + '_' +
+      (state.assessmentId || 'run')
+    );
+    downloadFile(reportHtml, fileStem + '_outcome_report.html', 'text/html');
     storeAssessmentRunMetadata();
     flashButtonText(els.exportAssessmentBtn, 'Session + report saved');
   }
@@ -2593,7 +2628,7 @@
       stationNumber: els.stationNumberInput.value.trim(),
       stationName: els.stationNameInput.value.trim(),
       assessorInitials: els.assessorInitialsInput.value.trim(),
-      path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, next: step.next, icon: step.icon }; }),
+      path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment,next: step.next, icon: step.icon }; }),
       currentNodeId: state.currentNodeId,
       currentMode: state.currentMode,
       currentPayload: state.currentPayload
@@ -2633,7 +2668,11 @@
         }
         if (linkRows.length) answerHtml += '<div class="report-link-list">' + linkRows.join('') + '</div>';
       }
-      return '<tr><td>' + (index + 1) + '</td><td><span class="icon">' + escapeHtml(step.icon || DEFAULT_ICON) + '</span> ' + escapeHtml(step.question) + '</td><td>' + answerHtml + '</td></tr>';
+      return '<tr><td>' + (index + 1) + '</td>'
+        + '<td><span class="icon">' + escapeHtml(step.icon || DEFAULT_ICON) + '</span> ' + escapeHtml(step.question) + '</td>'
+        + '<td>' + answerHtml + '</td>'
+        + '<td>' + escapeHtml(step.comment || '') + '</td>'
+        + '</tr>';
     }).join('');
     var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td></tr>' : '';
     var rationaleBlock = state.currentResult ? '<section class="box"><h2>Recommendation</h2><p><strong>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</strong></p><p>' + escapeHtml(state.currentResult.rationale || '') + '</p></section>' : '';
@@ -2665,7 +2704,7 @@
       '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
       '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
       '</div></section>' +
-      '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
+      '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
         rationaleBlock + treeTablesBlock + '<p class="foot">Open this report in a browser and print to PDF.</p>' + '</body></html>';
   }
 
