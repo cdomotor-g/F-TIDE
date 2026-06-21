@@ -49,31 +49,6 @@
       "items": {
         "$ref": "#/definitions/changeLogEntry"
       }
-    },
-    "layout": {
-      "type": "object",
-      "description": "Optional saved tree-view layout positions.",
-      "additionalProperties": true,
-      "properties": {
-        "positions": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "object",
-            "required": [
-              "x",
-              "y"
-            ],
-            "properties": {
-              "x": {
-                "type": "number"
-              },
-              "y": {
-                "type": "number"
-              }
-            }
-          }
-        }
-      }
     }
   },
   "definitions": {
@@ -97,6 +72,14 @@
         },
         "icon": {
           "type": "string"
+        },
+        "x": {
+          "type": "number",
+          "description": "Cytoscape canvas position — written by the tree map when nodes are dragged"
+        },
+        "y": {
+          "type": "number",
+          "description": "Cytoscape canvas position — written by the tree map when nodes are dragged"
         },
         "options": {
           "type": "array",
@@ -139,24 +122,8 @@
           "type": "string"
         },
         "next": {
-          "type": "object",
-          "required": [
-            "type",
-            "id"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "type": "string",
-              "enum": [
-                "node",
-                "result"
-              ]
-            },
-            "id": {
-              "type": "string"
-            }
-          }
+          "type": "string",
+          "description": "ID of the target node or result"
         }
       }
     },
@@ -166,7 +133,7 @@
         "id",
         "title"
       ],
-      "additionalProperties": true,
+      "additionalProperties": false,
       "properties": {
         "id": {
           "type": "string"
@@ -185,6 +152,14 @@
         },
         "isMissingRule": {
           "type": "boolean"
+        },
+        "x": {
+          "type": "number",
+          "description": "Cytoscape canvas position — written by the tree map when nodes are dragged"
+        },
+        "y": {
+          "type": "number",
+          "description": "Cytoscape canvas position — written by the tree map when nodes are dragged"
         }
       }
     },
