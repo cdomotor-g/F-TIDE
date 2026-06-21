@@ -4,7 +4,7 @@ import { ICON_CHOICES } from './constants.js';
 import { clone, escapeHtml, escapeAttr, uniqueStrings } from './utils.js';
 import { validateTree, validateSingleNode, validateSingleResult, getTreeValidationWarnings, formatTreeValidationWarningSummary } from './validation.js';
 // Circular imports resolved via ES module live bindings.
-import { renderNode, renderResult, updateButtons, clearMissingRuleForm, hideResultView, setSaveStatus } from './assessment.js';
+import { renderNode, renderResult, updateButtons, clearMissingRuleForm, hideResultView, setSaveStatus } from './runner.js';
 import { refreshTreeView, refreshMiniTreeView, syncMiniTreeView, highlightCurrentTreeViewPayload, refreshTablesViewIfOpen, highlightCurrentMiniTreePayload } from './tree-view.js';
 import { saveTreeJson, appendChangeLog } from './file-ops.js';
 
@@ -790,9 +790,9 @@ export function replaceTreeReferences(oldId, newId) {
     if (step.nodeId === oldId) step.nodeId = newId;
     if (step.next === oldId) step.next = newId;
   });
-  if (state.assessmentLinks[oldId]) {
-    state.assessmentLinks[newId] = state.assessmentLinks[oldId];
-    delete state.assessmentLinks[oldId];
+  if (state.sessionLinks[oldId]) {
+    state.sessionLinks[newId] = state.sessionLinks[oldId];
+    delete state.sessionLinks[oldId];
   }
 }
 

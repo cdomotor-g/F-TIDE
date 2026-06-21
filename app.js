@@ -1,17 +1,17 @@
 import { state } from './modules/state.js';
 import { els } from './modules/dom.js';
-import { setSaveStatus, updateButtons, renderCurrentPayloadJson, renderOptionTargetRows, updateProgress, restart, goBack, copyCurrentId, applyMissingRuleSelection, saveMissingRuleCase } from './modules/assessment.js';
+import { setSaveStatus, updateButtons, renderCurrentPayloadJson, renderOptionTargetRows, updateProgress, restart, goBack, copyCurrentId, applyMissingRuleSelection, saveMissingRuleCase } from './modules/runner.js';
 import { setEditorMode, openCurrentPayloadEditor, closeEditor, openCreatePayloadPanel, closeCreatePayloadPanel, createPayloadFromDraft, openTreeViewCreatePayloadPanel, handlePayloadFormInput, handlePayloadFormClick, deleteCurrentPayload, renameCurrentPayloadId, applyCurrentPayloadEdits, closeIconPicker, chooseIconForScope, cancelValidationWarningModal, proceedValidationWarningModal } from './modules/editor.js';
 import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView } from './modules/tree-view.js';
-import { handleJsonFileSelected, saveTreeJson, forkCurrentTreeBranch, exportAssessmentReport, saveCurrentSession, readPreviousAssessmentIds, renderPreviousAssessmentOptions } from './modules/file-ops.js';
+import { handleJsonFileSelected, saveTreeJson, forkCurrentTreeBranch, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions } from './modules/file-ops.js';
 
 init();
 
 function init() {
   bindEvents();
   updateButtons();
-  state.previousAssessmentIds = readPreviousAssessmentIds();
-  renderPreviousAssessmentOptions();
+  state.previousSessionIds = readPreviousSessionIds();
+  renderPreviousSessionOptions();
   renderCurrentPayloadJson(null);
   renderOptionTargetRows(null);
   updateProgress();
@@ -63,7 +63,7 @@ function bindEvents() {
   els.renamePayloadBtn.addEventListener('click', renameCurrentPayloadId);
   els.applyNodeEditsBtn.addEventListener('click', function () { applyCurrentPayloadEdits(false); });
   els.applyAndSaveNodeEditsBtn.addEventListener('click', function () { applyCurrentPayloadEdits(true); });
-  els.exportAssessmentBtn.addEventListener('click', exportAssessmentReport);
+  els.exportReportBtn.addEventListener('click', exportReport);
   els.saveSessionBtn.addEventListener('click', saveCurrentSession);
   els.showSchemaBtn.addEventListener('click', openSchemaModal);
   els.closeSchemaBtn.addEventListener('click', closeSchemaModal);
@@ -75,7 +75,7 @@ function bindEvents() {
       openTreeView();
     }
   });
-  els.supersedesAssessmentInput.addEventListener('input', function () { state.supersedesAssessmentId = els.supersedesAssessmentInput.value.trim(); });
+  els.supersedesSessionInput.addEventListener('input', function () { state.supersedesSessionId = els.supersedesSessionInput.value.trim(); });
   els.treeViewCloseBtn.addEventListener('click', closeTreeView);
   els.treeViewOverlay.addEventListener('click', function (e) { if (e.target === els.treeViewOverlay) closeTreeView(); });
   els.treeViewCreateQuestionBtn.addEventListener('click', function () { openTreeViewCreatePayloadPanel('node'); });

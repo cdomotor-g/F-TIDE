@@ -15,7 +15,7 @@ There are no tests, no linter config, and no package.json. The codebase is plain
 
 ## Architecture
 
-FWIN-TIDE is a single-page browser app for conducting structured infrastructure assessments using a decision tree loaded from `tree.json`.
+FWIN-ONSM-Matrix is a single-page browser app for running structured infrastructure evaluations using a decision tree loaded from `tree.json`.
 
 **Entry point:** `index.html` loads `report.js` as a regular script (which sets the `REPORT_CSS` global used when building HTML reports), then loads `app.js` as an ES module. `app.js` wires up all event listeners and initialises the UI.
 
@@ -26,14 +26,14 @@ FWIN-TIDE is a single-page browser app for conducting structured infrastructure 
 | `state.js` | Single exported `state` object — all mutable runtime state lives here |
 | `dom.js` | Cached DOM element references exported as `els` — import this instead of querying the DOM |
 | `constants.js` | Storage keys and the icon emoji palette |
-| `assessment.js` | Assessment flow: `renderNode`, `selectOption`, `renderResult`, `restart`, `goBack`, missing-rule handling |
+| `runner.js` | Session flow: `renderNode`, `selectOption`, `renderResult`, `restart`, `goBack`, missing-rule handling |
 | `file-ops.js` | Load `tree.json`, save/download updated tree + changelog, fork branches, export HTML reports, persist sessions to `localStorage` |
 | `editor.js` | In-browser node/result editor — guided form and raw JSON tab, create/delete/rename payloads |
 | `tree-view.js` | Cytoscape.js visual tree map (loaded from CDN in `index.html`), mini-tree sidebar, tables view |
 | `validation.js` | Tree structure validation — called on load and before applying edits |
 | `utils.js` | Pure helpers: `clone`, `escapeHtml`, `escapeAttr`, `slugify`, `downloadFile`, etc. |
 
-**Circular imports:** `assessment.js`, `editor.js`, `tree-view.js`, and `file-ops.js` import from each other. This is intentional and resolved via ES module live bindings — functions are only called at runtime after all modules have evaluated.
+**Circular imports:** `runner.js`, `editor.js`, `tree-view.js`, and `file-ops.js` import from each other. This is intentional and resolved via ES module live bindings — functions are only called at runtime after all modules have evaluated.
 
 ## tree.json format
 
@@ -76,9 +76,9 @@ The decision tree is a JSON file. Key fields:
 
 ## localStorage keys
 
-- `floodDecisionTool_unresolvedCases` — saved missing-rule cases
-- `floodDecisionTool_analysisSessions` — saved assessment sessions
-- `floodDecisionTool_assessmentHistory` — list of previous assessment IDs (for autocomplete)
+- `fwinonsm_unresolvedCases` — saved missing-rule cases
+- `fwinonsm_sessions` — saved sessions
+- `fwinonsm_sessionHistory` — list of previous session IDs (for autocomplete)
 
 ## Adding a new module
 

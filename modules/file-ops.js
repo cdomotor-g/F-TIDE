@@ -1,9 +1,9 @@
 import { state } from './state.js';
 import { els } from './dom.js';
-import { STORAGE_KEY, SESSION_STORAGE_KEY, ASSESSMENT_HISTORY_KEY, DEFAULT_ICON } from './constants.js';
+import { STORAGE_KEY, SESSION_STORAGE_KEY, SESSION_HISTORY_KEY, DEFAULT_ICON } from './constants.js';
 import { clone, escapeHtml, escapeAttr, slugify, sortKeysDeep, simpleHashFallback, downloadFile, padNumber, flashButtonText } from './utils.js';
 import { validateTree, formatTreeValidationWarningSummary } from './validation.js';
-import { setSaveStatus, clearMissingRuleForm, hideResultView, renderNode } from './assessment.js';
+import { setSaveStatus, clearMissingRuleForm, hideResultView, renderNode } from './runner.js';
 import { updateEditorDirtyState } from './editor.js';
 import { buildTreeTablesHtml } from './tree-view.js';
 
@@ -35,18 +35,18 @@ export function loadTreeFromText(fileName, rawText) {
   state.currentMode = 'node';
   state.currentPayload = parsed.nodes[parsed.startNode];
   state.currentResult = null;
-  state.assessmentLinks = {};
+  state.sessionLinks = {};
   state.tree.branchId = sanitizeBranchId(state.tree.branchId || 'main');
   els.loadStatus.textContent = 'Loaded: ' + state.loadedFileName + (warnings && warnings.length ? ' — ' + formatTreeValidationWarningSummary(parsed) : '');
   els.toolVersion.textContent = formatRuleSetLabel(state.tree);
   els.startupNotice.classList.add('hidden');
-  els.assessmentMetaCard.classList.remove('hidden');
+  els.sessionMetaCard.classList.remove('hidden');
   els.currentNodeCard.classList.remove('hidden');
   clearMissingRuleForm();
   setSaveStatus('Loaded successfully. Save tree.json downloads an updated copy.');
   updateEditorDirtyState();
   hideResultView();
-  startNewAssessmentRun();
+  startNewSession();
   renderNode();
 }
 
@@ -183,7 +183,7 @@ export function validateReportInputs() {
   return missing;
 }
 
-export function exportAssessmentReport() {
+export function exportReport() {
   if (!state.tree || (state.history.length === 0 && !state.currentResult)) return;
   var missing = validateReportInputs();
   if (missing.length) {
@@ -197,20 +197,20 @@ export function exportAssessmentReport() {
   var fileStem = slugify(
     (els.stationNumberInput.value.trim() || 'station') + '_' +
     (els.stationNameInput.value.trim() || 'site') + '_' +
-    (state.assessmentId || 'run')
+    (state.sessionId || 'run')
   );
   downloadFile(reportHtml, fileStem + '_outcome_report.html', 'text/html');
-  storeAssessmentRunMetadata();
-  flashButtonText(els.exportAssessmentBtn, 'Session + report saved');
+  storeSessionMetadata();
+  flashButtonText(els.exportReportBtn, 'Session + report saved');
 }
 
 export function saveCurrentSession() {
   if (!state.tree) return;
-  var id = els.assessmentIdInput.value || ('ASMT-' + Date.now());
+  var id = els.sessionIdInput.value || ('RUN-' + Date.now());
   var session = {
     id: id,
     savedAt: new Date().toISOString(),
-    assessmentId: id,
+    sessionId: id,
     treeTitle: state.tree.title || '',
     treeVersion: state.tree.version || '',
     treeVersionHash: state.tree.versionHash || '',
@@ -240,7 +240,7 @@ export function saveCurrentSession() {
 
 export function buildReportHtml(meta) {
   var dateText = meta.generatedAt.toLocaleString();
-  var supersedesText = state.supersedesAssessmentId ? escapeHtml(state.supersedesAssessmentId) : '-';
+  var supersedesText = state.supersedesSessionId ? escapeHtml(state.supersedesSessionId) : '-';
   var rows = state.history.map(function (step, index) {
     var answerHtml = escapeHtml(step.answer);
     if (state.tree && state.tree.nodes && state.tree.nodes[step.nodeId]) {
@@ -248,7 +248,7 @@ export function buildReportHtml(meta) {
       var linkRows = [];
       if (Array.isArray(node.links)) {
         node.links.forEach(function (link, linkIndex) {
-          var saved = state.assessmentLinks && state.assessmentLinks[node.id] ? state.assessmentLinks[node.id][linkIndex] : '';
+          var saved = state.sessionLinks && state.sessionLinks[node.id] ? state.sessionLinks[node.id][linkIndex] : '';
           var url = String(saved || (link && link.url) || '').trim();
           if (url) {
             var label = (link && link.label) ? escapeHtml(link.label) : 'Supporting document';
@@ -269,15 +269,15 @@ export function buildReportHtml(meta) {
   var treeTablesBlock = '<section class="box tree-snapshot"><h2>Current tree.json snapshot</h2><p class="tree-version"><strong>Tree version:</strong> ' + escapeHtml(state.tree.version || '-') + '</p><p class="tree-version"><strong>Version hash:</strong> ' + escapeHtml(state.tree.versionHash || '-') + '</p><p class="tree-version"><strong>Branch:</strong> ' + escapeHtml(state.tree.branchId || 'main') + '</p>' + buildTreeTablesHtml({ editable: false, headingLevel: 3 }) + '</section>';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0" />' +
-    '<title>' + escapeHtml((state.tree.title || 'Assessment') + ' - ' + meta.stationName) + '</title>' +
+    '<title>' + escapeHtml((state.tree.title || 'FWIN-ONSM-Matrix') + ' - ' + meta.stationName) + '</title>' +
     '<style>' + (window.REPORT_CSS || '') + '</style></head><body>' +
-    '<h1>' + escapeHtml(state.tree.title || 'FWIN-TIDE Assessment') + '</h1>' +
+    '<h1>' + escapeHtml(state.tree.title || 'FWIN-ONSM-Matrix') + '</h1>' +
     '<p>Generated ' + escapeHtml(dateText) + '</p>' +
-    '<section class="box"><h2>Assessment details</h2><div class="meta">' +
+    '<section class="box"><h2>Session details</h2><div class="meta">' +
     '<div><strong>Assessor initials:</strong> ' + escapeHtml(meta.assessorInitials) + '</div>' +
     '<div><strong>Station number:</strong> ' + escapeHtml(meta.stationNumber) + '</div>' +
     '<div><strong>Station name:</strong> ' + escapeHtml(meta.stationName) + '</div>' +
-    '<div><strong>Assessment ID:</strong> ' + escapeHtml(state.assessmentId || '-') + '</div>' +
+    '<div><strong>Session ID:</strong> ' + escapeHtml(state.sessionId || '-') + '</div>' +
     '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
     '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
     '</div></section>' +
@@ -285,57 +285,57 @@ export function buildReportHtml(meta) {
     rationaleBlock + treeTablesBlock + '<p class="foot">Open this report in a browser and print to PDF.</p>' + '</body></html>';
 }
 
-export function startNewAssessmentRun() {
-  state.assessmentId = generateAssessmentId();
-  state.supersedesAssessmentId = '';
-  renderAssessmentMetadata();
+export function startNewSession() {
+  state.sessionId = generateSessionId();
+  state.supersedesSessionId = '';
+  renderSessionMetadata();
 }
 
-export function generateAssessmentId() {
+export function generateSessionId() {
   var now = new Date();
-  return 'ASMT-' + padNumber(now.getFullYear(), 4) + padNumber(now.getMonth() + 1, 2) + padNumber(now.getDate(), 2) + '-' + padNumber(now.getHours(), 2) + padNumber(now.getMinutes(), 2) + padNumber(now.getSeconds(), 2) + '-' + Math.floor(1000 + Math.random() * 9000);
+  return 'RUN-' + padNumber(now.getFullYear(), 4) + padNumber(now.getMonth() + 1, 2) + padNumber(now.getDate(), 2) + '-' + padNumber(now.getHours(), 2) + padNumber(now.getMinutes(), 2) + padNumber(now.getSeconds(), 2) + '-' + Math.floor(1000 + Math.random() * 9000);
 }
 
-export function renderAssessmentMetadata() {
-  if (els.assessmentIdInput) els.assessmentIdInput.value = state.assessmentId || '';
-  if (els.supersedesAssessmentInput) els.supersedesAssessmentInput.value = state.supersedesAssessmentId || '';
-  renderPreviousAssessmentOptions();
+export function renderSessionMetadata() {
+  if (els.sessionIdInput) els.sessionIdInput.value = state.sessionId || '';
+  if (els.supersedesSessionInput) els.supersedesSessionInput.value = state.supersedesSessionId || '';
+  renderPreviousSessionOptions();
 }
 
-export function renderPreviousAssessmentOptions() {
-  if (!els.previousAssessmentIdsDatalist) return;
-  els.previousAssessmentIdsDatalist.innerHTML = (state.previousAssessmentIds || []).map(function (id) {
+export function renderPreviousSessionOptions() {
+  if (!els.previousSessionIdsDatalist) return;
+  els.previousSessionIdsDatalist.innerHTML = (state.previousSessionIds || []).map(function (id) {
     return '<option value="' + escapeAttr(id) + '"></option>';
   }).join('');
 }
 
-export function readPreviousAssessmentIds() {
+export function readPreviousSessionIds() {
   try {
-    var raw = localStorage.getItem(ASSESSMENT_HISTORY_KEY);
+    var raw = localStorage.getItem(SESSION_HISTORY_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch (_err) {
     return [];
   }
 }
 
-export function savePreviousAssessmentIds(ids) {
+export function savePreviousSessionIds(ids) {
   try {
-    localStorage.setItem(ASSESSMENT_HISTORY_KEY, JSON.stringify(ids));
+    localStorage.setItem(SESSION_HISTORY_KEY, JSON.stringify(ids));
   } catch (_err) {
     // ignore storage failures
   }
 }
 
-export function storeAssessmentRunMetadata() {
-  if (!state.assessmentId) return;
-  var entries = readPreviousAssessmentIds();
-  var currentId = String(state.assessmentId || '').trim();
+export function storeSessionMetadata() {
+  if (!state.sessionId) return;
+  var entries = readPreviousSessionIds();
+  var currentId = String(state.sessionId || '').trim();
   if (!currentId) return;
   if (entries.indexOf(currentId) === -1) {
     entries.unshift(currentId);
     if (entries.length > 50) entries.length = 50;
-    savePreviousAssessmentIds(entries);
-    state.previousAssessmentIds = entries;
-    renderPreviousAssessmentOptions();
+    savePreviousSessionIds(entries);
+    state.previousSessionIds = entries;
+    renderPreviousSessionOptions();
   }
 }

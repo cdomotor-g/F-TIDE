@@ -1,5 +1,5 @@
 {
-  "title": "FWIN-TIDE",
+  "title": "FWIN-ONSM-Matrix",
   "version": "v45.2",
   "startNode": "AGE_TOWER",
   "nodes": {
@@ -24,8 +24,8 @@
     "WHS_RESULT": {
       "id": "WHS_RESULT",
       "icon": "\u26a0\ufe0f",
-      "note": "WHS assessment branch.",
-      "question": "What is the WHS risk assessment result?",
+      "note": "WHS evaluation branch.",
+      "question": "What is the WHS risk evaluation result?",
       "options": [
         {
           "label": "None",

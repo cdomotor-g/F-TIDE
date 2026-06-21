@@ -12,7 +12,7 @@ export function escapeHtml(value) {
 export function escapeAttr(value) { return escapeHtml(value).replace(/\n/g, '&#10;'); }
 
 export function slugify(value) {
-  return String(value || 'assessment').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'assessment';
+  return String(value || 'item').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '') || 'item';
 }
 
 export function uniqueStrings(values) {

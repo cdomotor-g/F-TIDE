@@ -69,8 +69,8 @@ export function updateButtons() {
   els.backBtn.disabled = !canGoBack;
   els.backResultBtn.disabled = !canGoBack;
   els.editNodeBtn.disabled = !canEdit;
-  els.exportAssessmentBtn.disabled = !canExport;
-  els.exportAssessmentBtn.classList.toggle('ready', hasTree && state.currentMode === 'result' && !!state.currentResult);
+  els.exportReportBtn.disabled = !canExport;
+  els.exportReportBtn.classList.toggle('ready', hasTree && state.currentMode === 'result' && !!state.currentResult);
   els.applyMissingRuleBtn.disabled = !(hasTree && state.currentResult && state.currentResult.isMissingRule);
   els.saveMissingRuleBtn.disabled = !(hasTree && state.currentResult && state.currentResult.isMissingRule);
   els.openCreateQuestionBtn.disabled = !hasTree;
@@ -108,7 +108,7 @@ export function renderSupportLinks(node) {
     label.className = 'support-link-label';
     label.textContent = (link.label || 'Supporting document');
     row.appendChild(label);
-    var currentRuntime = (state.assessmentLinks[node.id] && state.assessmentLinks[node.id][idx]) || '';
+    var currentRuntime = (state.sessionLinks[node.id] && state.sessionLinks[node.id][idx]) || '';
     var defaultUrl = String(link.url || '').trim();
     var input = document.createElement('input');
     input.className = 'input';
@@ -124,7 +124,7 @@ export function renderSupportLinks(node) {
     clearBtn.className = 'btn-small';
     clearBtn.textContent = 'Clear';
     clearBtn.addEventListener('click', function () {
-      if (state.assessmentLinks[node.id]) state.assessmentLinks[node.id][idx] = '';
+      if (state.sessionLinks[node.id]) state.sessionLinks[node.id][idx] = '';
       renderSupportLinks(node);
     });
     if (currentRuntime) {
@@ -139,9 +139,9 @@ export function renderSupportLinks(node) {
         }
         var val = String(input.value || '').trim();
         if (!val) return;
-        if (!state.assessmentLinks[node.id]) state.assessmentLinks[node.id] = [];
-        state.assessmentLinks[node.id][idx] = val;
-        setSaveStatus('Link updated for this assessment (not persisted to tree.json).');
+        if (!state.sessionLinks[node.id]) state.sessionLinks[node.id] = [];
+        state.sessionLinks[node.id][idx] = val;
+        setSaveStatus('Link updated for this session (not persisted to tree.json).');
         renderSupportLinks(node);
       });
       var openBtn = document.createElement('a');
@@ -159,9 +159,9 @@ export function renderSupportLinks(node) {
       actionBtn.addEventListener('click', function () {
         var val = String(input.value || '').trim();
         if (!val) return;
-        if (!state.assessmentLinks[node.id]) state.assessmentLinks[node.id] = [];
-        state.assessmentLinks[node.id][idx] = val;
-        setSaveStatus('Link saved for this assessment (not persisted to tree.json).');
+        if (!state.sessionLinks[node.id]) state.sessionLinks[node.id] = [];
+        state.sessionLinks[node.id][idx] = val;
+        setSaveStatus('Link saved for this session (not persisted to tree.json).');
         renderSupportLinks(node);
       });
       row.appendChild(input);
@@ -308,7 +308,7 @@ export function restart() {
   state.currentMode = 'node';
   state.currentPayload = state.tree.nodes[state.tree.startNode];
   state.currentResult = null;
-  state.assessmentLinks = {};
+  state.sessionLinks = {};
   clearMissingRuleForm();
   hideResultView();
   renderNode();

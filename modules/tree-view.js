@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { els } from './dom.js';
 import { escapeHtml, escapeAttr, uniqueStrings } from './utils.js';
 import { getOrphanNodeIds } from './validation.js';
-import { setSaveStatus } from './assessment.js';
+import { setSaveStatus } from './runner.js';
 import { openPayloadEditorForId } from './editor.js';
 
 var treeViewCy = null;

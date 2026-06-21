@@ -1,8 +1,6 @@
-# FWIN-TIDE
+# FWIN-ONSM-Matrix
 
-**F**lood **W**arning **I**nfrastructure — **T**ower **I**nfrastructure **D**ecision **E**ngine
-
-A browser-based decision-support tool for conducting structured assessments of flood warning tower infrastructure. Load a decision tree (`tree.json`), walk through a guided Q&A, and export a self-contained HTML assessment report.
+A browser-based decision-support tool for structured evaluations of flood warning tower infrastructure. Load a decision tree (`tree.json`), walk through a guided Q&A, and export a self-contained HTML report.
 
 ## Quick start
 
@@ -17,9 +15,9 @@ Then load `tree.json` using the **Load tree.json** button.
 ## How it works
 
 1. **Load** — drag in a `tree.json` file to start a session.
-2. **Assess** — answer each question by clicking an option. The tool tracks your decision path and shows approximate progress.
+2. **Evaluate** — answer each question by clicking an option. The tool tracks your decision path and shows approximate progress.
 3. **Comment** — add notes on any question; they appear in the final report.
-4. **Export** — when you reach an outcome, click **Export assessment** to download a printable HTML report containing the full decision path, outcome, and a snapshot of the rule set used.
+4. **Export** — when you reach an outcome, click **Export report** to download a printable HTML report containing the full decision path, outcome, and a snapshot of the rule set used.
 
 ## tree.json format
 
@@ -66,13 +64,13 @@ The decision tree is a JSON file with this structure:
 
 ## Missing rules
 
-If an assessment path leads to an undefined target, the tool flags it as a **Missing Rule**. You can:
+If a path leads to an undefined target, the tool flags it as a **Missing Rule**. You can:
 - Apply an existing result to that branch immediately (persists when you save `tree.json`).
 - Save the unresolved case with notes to `localStorage` for later review.
 
 ## Session persistence
 
-Assessment sessions and unresolved cases are saved to browser `localStorage`. Previous assessment IDs are offered as autocomplete when linking a new assessment to a prior one via **Supersedes assessment**.
+Sessions and unresolved cases are saved to browser `localStorage`. Previous session IDs are offered as autocomplete when linking a new session to a prior one via **Supersedes session**.
 
 ## Files
 
@@ -80,7 +78,7 @@ Assessment sessions and unresolved cases are saved to browser `localStorage`. Pr
 |---|---|
 | `index.html` | App shell |
 | `app.js` | Entry point — event wiring and init |
-| `modules/` | JS modules (state, assessment flow, editor, tree view, file I/O, validation) |
+| `modules/` | JS modules (state, session flow, editor, tree view, file I/O, validation) |
 | `report.js` | CSS injected into exported HTML reports |
 | `tree.json` | Default decision tree |
 | `tree_schema.json` | JSON Schema for `tree.json` |

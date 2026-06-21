@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FWIN-TIDE</title>
+  <title>FWIN-ONSM-Matrix</title>
   <link rel="icon" type="image/svg+xml" href="tower.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -12,8 +12,7 @@
     <div class="header">
       <img src="tower.svg" class="header-tower" alt="" aria-hidden="true" />
       <div class="header-copy">
-        <h1>FWIN-TIDE</h1>
-        <p>Tower Infrastructure Decision Engine</p>
+        <h1>FWIN-ONSM-Matrix</h1>
       </div>
     </div>
     <div class="grid">
@@ -40,23 +39,23 @@
           <span id="loadStatus">No tree loaded yet.</span>
           <span class="pill" id="toolVersion">Rule set: -</span>
         </div>
-        <div id="assessmentMetaCard" class="card hidden">
-          <p class="card-title">Assessment details</p>
+        <div id="sessionMetaCard" class="card hidden">
+          <p class="card-title">Session details</p>
           <div class="meta-grid">
             <div class="meta-field"><label for="assessorInitialsInput">Assessor initials</label><input id="assessorInitialsInput" class="input" type="text" maxlength="20" placeholder="e.g. HS,AS,DW,RD,RH" /></div>
             <div class="meta-field"><label for="stationNumberInput">Station number</label><input id="stationNumberInput" class="input" type="text" maxlength="50" placeholder="e.g. 123456A" /></div>
             <div class="meta-field"><label for="stationNameInput">Station name</label><input id="stationNameInput" class="input" type="text" maxlength="120" placeholder="e.g. Burnett at XYZ" /></div>
-            <div class="meta-field"><label for="assessmentIdInput">Assessment ID</label><input id="assessmentIdInput" class="input" type="text" readonly /></div>
-            <div class="meta-field"><label for="supersedesAssessmentInput">Supersedes assessment</label><input id="supersedesAssessmentInput" class="input" type="text" list="previousAssessmentIds" placeholder="Optional previous assessment ID or type new one" /></div>
+            <div class="meta-field"><label for="sessionIdInput">Session ID</label><input id="sessionIdInput" class="input" type="text" readonly /></div>
+            <div class="meta-field"><label for="supersedesSessionInput">Supersedes session</label><input id="supersedesSessionInput" class="input" type="text" list="previousSessionIds" placeholder="Optional previous session ID or type new one" /></div>
           </div>
-          <datalist id="previousAssessmentIds"></datalist>
+          <datalist id="previousSessionIds"></datalist>
         </div>
         <div class="notice" id="startupNotice">Start by loading <span class="inline-code">tree.json</span>. Original tree format still works unchanged. Optional fields: <span class="inline-code">icon</span> and <span class="inline-code">links</span>.</div>
         <div id="questionView" class="card hidden">
           <div class="card-header">
             <p class="card-title" style="margin:0;">Question</p>
             <div class="question-actions">
-              <button class="btn" id="restartBtn" type="button">⟲ Restart assessment</button>
+              <button class="btn" id="restartBtn" type="button">⟲ Restart</button>
               <button class="btn" id="backBtn" type="button">← Back one step</button>
             </div>
           </div>
@@ -79,7 +78,7 @@
           <div class="card-header">
             <p class="card-title" style="margin:0;">Outcome</p>
             <div class="result-actions">
-              <button class="btn" id="restartResultBtn" type="button">⟲ Restart assessment</button>
+              <button class="btn" id="restartResultBtn" type="button">⟲ Restart</button>
               <button class="btn" id="backResultBtn" type="button">← Back one step</button>
             </div>
           </div>
@@ -95,7 +94,7 @@
           <div id="missingRuleBox" class="missing-box hidden">
             <p style="margin-top:0;"><strong>No current recommendation exists for this scenario.</strong></p>
             <p class="footnote" style="margin-top:0;">Missing Rule means this path currently lands on a placeholder result instead of a final recommendation.</p>
-            <p class="footnote" style="margin-top:0;">If you apply an existing result below, that branch will immediately use it in this tree and future assessments will return that result after you save tree.json.</p>
+            <p class="footnote" style="margin-top:0;">If you apply an existing result below, that branch will immediately use it in this tree and future sessions will return that result after you save tree.json.</p>
             <label for="missingRuleSelect">Select the recommendation that should apply</label>
             <select id="missingRuleSelect" class="select-input"></select>
             <label for="missingRuleText" style="margin-top:10px;">Notes (optional)</label>
@@ -131,7 +130,7 @@
         <div class="card">
           <div class="card-header">
             <p class="card-title" style="margin:0;">Decision path</p>
-            <div class="path-actions"><button class="btn-small" id="exportAssessmentBtn" type="button">Export assessment</button></div>
+            <div class="path-actions"><button class="btn-small" id="exportReportBtn" type="button">Export report</button></div>
           </div>
           <div class="path-table-wrap">
             <table class="path-table">
