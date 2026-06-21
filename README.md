@@ -35,6 +35,8 @@ The decision tree is a JSON file with this structure:
       "id": "Q_START",
       "question": "Is the tower within a flood-prone zone?",
       "icon": "🌊",
+      "x": 100,
+      "y": 200,
       "options": [
         { "label": "Yes", "next": "Q_NEXT" },
         { "label": "No",  "next": "RESULT_OK" }
@@ -52,7 +54,7 @@ The decision tree is a JSON file with this structure:
 }
 ```
 
-See `tree_schema.json` (or click **Show tree schema** in the app) for the full schema.
+`x` and `y` on nodes are Cytoscape.js canvas positions, written back when you drag nodes in the tree map and persisted when you save `tree.json`. They are excluded from the SHA-256 content hash so layout changes don't increment the version. Note: `tree_schema.json` does not reflect this — it marks nodes as `additionalProperties: false` without listing `x`/`y` and defines an unused top-level `layout.positions` structure instead. The schema is not used for runtime validation.
 
 ## Editing the tree in-browser
 

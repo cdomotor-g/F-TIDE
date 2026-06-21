@@ -68,7 +68,9 @@ The decision tree is a JSON file validated against `tree_schema.json`. Key field
 
 Note: at runtime `option.next` is a plain string ID (not the object form shown in the JSON Schema — the schema predates the current implementation).
 
-**Versioning:** `saveTreeJson()` auto-increments `version`, computes a SHA-256 hash of the tree content (excluding layout/version fields), and triggers downloads of both `tree.json` and `changelog.json`. Forking creates a new `branchId`.
+**Node positions:** Cytoscape.js stores layout positions as `x` and `y` directly on each node object (e.g. `"x": 69.04, "y": 474.19`). `tree_schema.json` doesn't reflect this — it defines a top-level `layout.positions` structure that is never used, and marks nodes as `additionalProperties: false` without listing `x`/`y`. Don't use `tree_schema.json` as the source of truth for what the app accepts. `buildVersionHashTreeSnapshot()` strips `x`/`y` from nodes before hashing so that layout changes don't affect the content hash.
+
+**Versioning:** `saveTreeJson()` auto-increments `version`, computes a SHA-256 hash of the tree content (excluding `x`/`y`, layout, and version fields), and triggers downloads of both `tree.json` and `changelog.json`. Forking creates a new `branchId`.
 
 ## localStorage keys
 
