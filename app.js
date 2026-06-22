@@ -126,7 +126,7 @@ async function openSchemaModal() {
   if (!els.treeSchemaText) return;
   els.treeSchemaText.textContent = 'Loading schema…';
   try {
-    var resp = await fetch('tree_schema.json', { cache: 'no-cache' });
+    var resp = await fetch('tree_schema.json?' + Date.now());
     if (!resp.ok) throw new Error('tree_schema.json not found');
     var schema = await resp.json();
     els.treeSchemaText.textContent = JSON.stringify(schema, null, 2);
