@@ -3,7 +3,7 @@ import { els } from './modules/dom.js';
 import { setSaveStatus, updateButtons, renderCurrentPayloadJson, renderOptionTargetRows, updateProgress, restart, goBack, copyCurrentId, applyMissingRuleSelection, saveMissingRuleCase } from './modules/runner.js';
 import { setEditorMode, openCurrentPayloadEditor, closeEditor, openCreatePayloadPanel, closeCreatePayloadPanel, createPayloadFromDraft, openTreeViewCreatePayloadPanel, handlePayloadFormInput, handlePayloadFormClick, deleteCurrentPayload, renameCurrentPayloadId, applyCurrentPayloadEdits, closeIconPicker, chooseIconForScope, cancelValidationWarningModal, proceedValidationWarningModal } from './modules/editor.js';
 import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView } from './modules/tree-view.js';
-import { handleJsonFileSelected, saveTreeJson, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile } from './modules/file-ops.js';
+import { handleJsonFileSelected, saveTreeJson, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile, generateSessionId } from './modules/file-ops.js';
 
 init();
 
@@ -81,6 +81,10 @@ els.restartBtn.addEventListener('click', restart);
     }
   });
   els.supersedesSessionInput.addEventListener('input', function () { state.supersedesSessionId = els.supersedesSessionInput.value.trim(); });
+  if (els.newSessionIdBtn) els.newSessionIdBtn.addEventListener('click', function () {
+    state.sessionId = generateSessionId();
+    els.sessionIdInput.value = state.sessionId;
+  });
   if (els.clearSessionMetaBtn) els.clearSessionMetaBtn.addEventListener('click', function () {
     els.assessorInitialsInput.value = '';
     els.stationNumberInput.value = '';
