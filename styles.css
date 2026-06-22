@@ -105,6 +105,7 @@ body::before {
 }
 .header h1 { margin: 0 0 8px 0; font-size: 34px; line-height: 1.15; }
 .header p { margin: 0; color: var(--muted); }
+.build-id { font-size: 11px; letter-spacing: 0.03em; opacity: 0.55; margin-top: 4px !important; font-family: monospace; }
 .grid { display: grid; grid-template-columns: 1.95fr 1fr; gap: 20px; align-items: start; }
 .panel {
   background: rgba(17, 26, 43, 0.92);

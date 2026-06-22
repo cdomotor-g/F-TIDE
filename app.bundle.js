@@ -2684,6 +2684,21 @@ function init() {
   updateProgress();
   setSaveStatus('');
   setEditorMode('form');
+  renderBuildId();
+}
+
+function renderBuildId() {
+  var el = document.getElementById('buildId');
+  if (!el) return;
+  var ts = window.BUILD_TIMESTAMP;
+  var commit = window.BUILD_COMMIT;
+  if (!ts) return;
+  var d = new Date(ts);
+  var pad = function(n) { return String(n).padStart(2, '0'); };
+  var label = d.getUTCFullYear() + '-' + pad(d.getUTCMonth() + 1) + '-' + pad(d.getUTCDate())
+    + ' ' + pad(d.getUTCHours()) + ':' + pad(d.getUTCMinutes()) + ' UTC';
+  if (commit) label += ' · ' + commit;
+  el.textContent = 'Build: ' + label;
 }
 
 function bindEvents() {
