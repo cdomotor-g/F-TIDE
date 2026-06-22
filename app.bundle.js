@@ -135,6 +135,8 @@ var els = {
   assessorInitialsInput: document.getElementById('assessorInitialsInput'),
   stationNumberInput: document.getElementById('stationNumberInput'),
   stationNameInput: document.getElementById('stationNameInput'),
+  newSessionIdBtn: document.getElementById('newSessionIdBtn'),
+  clearSessionMetaBtn: document.getElementById('clearSessionMetaBtn'),
   questionView: document.getElementById('questionView'),
   resultView: document.getElementById('resultView'),
   progressSummaryQ: document.getElementById('progressSummaryQ'),
@@ -2762,6 +2764,17 @@ function bindEvents() {
       event.preventDefault();
       openTreeView();
     }
+  });
+  if (els.newSessionIdBtn) els.newSessionIdBtn.addEventListener('click', function () {
+    state.sessionId = generateSessionId();
+    els.sessionIdInput.value = state.sessionId;
+  });
+  if (els.clearSessionMetaBtn) els.clearSessionMetaBtn.addEventListener('click', function () {
+    els.assessorInitialsInput.value = '';
+    els.stationNumberInput.value = '';
+    els.stationNameInput.value = '';
+    els.supersedesSessionInput.value = '';
+    state.supersedesSessionId = '';
   });
   els.supersedesSessionInput.addEventListener('input', function () { state.supersedesSessionId = els.supersedesSessionInput.value.trim(); });
   els.treeViewCloseBtn.addEventListener('click', closeTreeView);
