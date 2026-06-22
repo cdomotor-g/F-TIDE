@@ -2439,12 +2439,12 @@ function buildReportHtml(meta) {
     '<h1>' + escapeHtml(state.tree.title || 'FWIN-ONSM-Matrix') + '</h1>' +
     '<p>Generated ' + escapeHtml(dateText) + '</p>' +
     '<section class="box"><h2>Session details</h2><div class="meta">' +
+    '<div><strong>Station name:</strong> ' + escapeHtml(meta.stationName) + '</div>' +
     '<div><strong>Assessor initials:</strong> ' + escapeHtml(meta.assessorInitials) + '</div>' +
     '<div><strong>Station number:</strong> ' + escapeHtml(meta.stationNumber) + '</div>' +
-    '<div><strong>Station name:</strong> ' + escapeHtml(meta.stationName) + '</div>' +
     '<div><strong>Session ID:</strong> ' + escapeHtml(state.sessionId || '-') + '</div>' +
-    '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
     '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
+    '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
     '</div></section>' +
     '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
     rationaleBlock + treeTablesBlock + '<p class="foot">Open this report in a browser and print to PDF.</p>' + '</body></html>';
