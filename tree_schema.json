@@ -23,9 +23,6 @@
         "null"
       ]
     },
-    "branchId": {
-      "type": "string"
-    },
     "startNode": {
       "type": "string",
       "description": "Must match a node ID"
@@ -183,7 +180,6 @@
             "payloadCreated",
             "payloadRenamed",
             "missingRuleMappedToExistingResult",
-            "treeForked",
             "treeSaved"
           ]
         },
@@ -215,9 +211,6 @@
             "null"
           ]
         },
-        "branchId": {
-          "type": "string"
-        }
       }
     }
   }

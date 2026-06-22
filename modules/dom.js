@@ -1,8 +1,7 @@
 export var els = {
   jsonFileInput: document.getElementById('jsonFileInput'),
   saveTreeBtn: document.getElementById('saveTreeBtn'),
-  forkTreeBtn: document.getElementById('forkTreeBtn'),
-  saveSessionBtn: document.getElementById('saveSessionBtn'),
+saveSessionBtn: document.getElementById('saveSessionBtn'),
   showSchemaBtn: document.getElementById('showSchemaBtn'),
   schemaModalOverlay: document.getElementById('schemaModalOverlay'),
   closeSchemaBtn: document.getElementById('closeSchemaBtn'),

@@ -59,8 +59,7 @@ export function updateButtons() {
   var canExport = hasTree && (state.history.length > 0 || !!state.currentResult);
   var canEdit = hasTree && !!state.currentPayload;
   if (els.saveTreeBtn) els.saveTreeBtn.disabled = !hasTree;
-  if (els.forkTreeBtn) els.forkTreeBtn.disabled = !hasTree;
-  if (els.saveSessionBtn) els.saveSessionBtn.disabled = !hasTree;
+if (els.saveSessionBtn) els.saveSessionBtn.disabled = !hasTree;
   if (els.openTreeViewBtn) els.openTreeViewBtn.disabled = !hasTree;
   if (els.openTablesBtn) els.openTablesBtn.disabled = !hasTree;
   els.restartBtn.disabled = !hasTree;
@@ -369,7 +368,6 @@ export function saveMissingRuleCase() {
     treeTitle: state.tree ? (state.tree.title || '') : '',
     treeVersion: state.tree ? (state.tree.version || '') : '',
     treeVersionHash: state.tree ? (state.tree.versionHash || '') : '',
-    branchId: state.tree ? (state.tree.branchId || 'main') : 'main',
     path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon }; }),
     selectedResultId: els.missingRuleSelect.value || null,
     proposedRecommendation: note

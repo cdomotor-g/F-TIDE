@@ -36,7 +36,6 @@ export function loadTreeFromText(fileName, rawText) {
   state.currentPayload = parsed.nodes[parsed.startNode];
   state.currentResult = null;
   state.sessionLinks = {};
-  state.tree.branchId = sanitizeBranchId(state.tree.branchId || 'main');
   els.loadStatus.textContent = 'Loaded: ' + state.loadedFileName + (warnings && warnings.length ? ' — ' + formatTreeValidationWarningSummary(parsed) : '');
   els.toolVersion.textContent = formatRuleSetLabel(state.tree);
   els.startupNotice.classList.add('hidden');
@@ -52,7 +51,6 @@ export function loadTreeFromText(fileName, rawText) {
 
 export async function saveTreeJson() {
   if (!state.tree) return;
-  state.tree.branchId = sanitizeBranchId(state.tree.branchId || 'main');
   var previousHash = state.tree.versionHash || null;
   state.tree.parentVersionHash = previousHash;
   state.tree.version = incrementVersionString(state.tree.version || 'v0.0');
@@ -61,8 +59,7 @@ export async function saveTreeJson() {
     type: 'treeSaved',
     treeVersion: state.tree.version,
     versionHash: state.tree.versionHash,
-    parentVersionHash: previousHash,
-    branchId: state.tree.branchId
+    parentVersionHash: previousHash
   });
   els.toolVersion.textContent = formatRuleSetLabel(state.tree);
   var treeContent = JSON.stringify(state.tree, null, 2);
@@ -77,41 +74,10 @@ export async function saveTreeJson() {
 export function buildChangelogJson() {
   var versionChain = state.changeLog
     .filter(function (e) { return e.type === 'treeSaved'; })
-    .map(function (e) { return { version: e.treeVersion || '', versionHash: e.versionHash || null, parentVersionHash: e.parentVersionHash || null, branchId: e.branchId || 'main', savedAt: e.changedAt || '' }; });
+    .map(function (e) { return { version: e.treeVersion || '', versionHash: e.versionHash || null, parentVersionHash: e.parentVersionHash || null, savedAt: e.changedAt || '' }; });
   return JSON.stringify({ versionChain: versionChain, entries: state.changeLog }, null, 2);
 }
 
-export async function forkCurrentTreeBranch() {
-  if (!state.tree) return;
-  var sourceBranch = sanitizeBranchId(state.tree.branchId || 'main');
-  var existingHash = state.tree.versionHash || await computeTreeVersionHash(state.tree);
-  state.tree.versionHash = existingHash;
-  var suggested = generateForkBranchId(sourceBranch);
-  var requested = String(prompt('Enter branch ID for the new fork:', suggested) || '').trim();
-  if (!requested) return;
-  var nextBranchId = sanitizeBranchId(requested);
-  if (!nextBranchId) return;
-  state.tree.branchId = nextBranchId;
-  state.tree.parentVersionHash = existingHash;
-  appendChangeLog({
-    type: 'treeForked',
-    branchId: nextBranchId,
-    sourceBranchId: sourceBranch,
-    versionHash: existingHash,
-    parentVersionHash: existingHash
-  });
-  els.toolVersion.textContent = formatRuleSetLabel(state.tree);
-  setSaveStatus('Forked tree to branch ' + nextBranchId + '. Save tree.json to persist the fork.');
-}
-
-export function generateForkBranchId(sourceBranch) {
-  return sanitizeBranchId((sourceBranch || 'main') + '-fork-' + new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 12));
-}
-
-export function sanitizeBranchId(branchId) {
-  var clean = slugify(String(branchId || '').trim()).replace(/^-+|-+$/g, '');
-  return clean || 'main';
-}
 
 export function getShortVersionHash(hashValue) {
   var value = String(hashValue || '').trim();
@@ -122,8 +88,6 @@ export function getShortVersionHash(hashValue) {
 export function formatRuleSetLabel(tree) {
   if (!tree) return 'Rule set: -';
   var parts = [tree.version || '-'];
-  var branchId = sanitizeBranchId(tree.branchId || 'main');
-  if (branchId) parts.push('branch:' + branchId);
   if (tree.versionHash) parts.push(getShortVersionHash(tree.versionHash));
   return 'Rule set: ' + parts.join(' · ');
 }
@@ -133,7 +97,6 @@ export function buildVersionHashTreeSnapshot(tree) {
   delete snapshot.version;
   delete snapshot.versionHash;
   delete snapshot.parentVersionHash;
-  delete snapshot.branchId;
   delete snapshot.changeLog;
   Object.keys(snapshot.nodes || {}).forEach(function (id) { delete snapshot.nodes[id].x; delete snapshot.nodes[id].y; });
   Object.keys(snapshot.results || {}).forEach(function (id) { delete snapshot.results[id].x; delete snapshot.results[id].y; });
@@ -159,7 +122,6 @@ export function appendChangeLog(entry) {
   if (typeof payload.treeVersion === 'undefined' && state.tree.version) payload.treeVersion = state.tree.version;
   if (typeof payload.versionHash === 'undefined') payload.versionHash = state.tree.versionHash || null;
   if (typeof payload.parentVersionHash === 'undefined') payload.parentVersionHash = state.tree.parentVersionHash || null;
-  if (typeof payload.branchId === 'undefined') payload.branchId = sanitizeBranchId(state.tree.branchId || 'main');
   state.changeLog.push(payload);
 }
 
@@ -214,7 +176,6 @@ export function saveCurrentSession() {
     treeTitle: state.tree.title || '',
     treeVersion: state.tree.version || '',
     treeVersionHash: state.tree.versionHash || '',
-    branchId: state.tree.branchId || 'main',
     stationNumber: els.stationNumberInput.value.trim(),
     stationName: els.stationNameInput.value.trim(),
     assessorInitials: els.assessorInitialsInput.value.trim(),
@@ -266,7 +227,7 @@ export function buildReportHtml(meta) {
   }).join('');
   var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td></tr>' : '';
   var rationaleBlock = state.currentResult ? '<section class="box"><h2>Recommendation</h2><p><strong>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</strong></p><p>' + escapeHtml(state.currentResult.rationale || '') + '</p></section>' : '';
-  var treeTablesBlock = '<section class="box tree-snapshot"><h2>Current tree.json snapshot</h2><p class="tree-version"><strong>Tree version:</strong> ' + escapeHtml(state.tree.version || '-') + '</p><p class="tree-version"><strong>Version hash:</strong> ' + escapeHtml(state.tree.versionHash || '-') + '</p><p class="tree-version"><strong>Branch:</strong> ' + escapeHtml(state.tree.branchId || 'main') + '</p>' + buildTreeTablesHtml({ editable: false, headingLevel: 3 }) + '</section>';
+  var treeTablesBlock = '<section class="box tree-snapshot"><h2>Current tree.json snapshot</h2><p class="tree-version"><strong>Tree version:</strong> ' + escapeHtml(state.tree.version || '-') + '</p><p class="tree-version"><strong>Version hash:</strong> ' + escapeHtml(state.tree.versionHash || '-') + '</p>' + buildTreeTablesHtml({ editable: false, headingLevel: 3 }) + '</section>';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0" />' +
     '<title>' + escapeHtml((state.tree.title || 'FWIN-ONSM-Matrix') + ' - ' + meta.stationName) + '</title>' +
