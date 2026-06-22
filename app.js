@@ -81,6 +81,13 @@ els.restartBtn.addEventListener('click', restart);
     }
   });
   els.supersedesSessionInput.addEventListener('input', function () { state.supersedesSessionId = els.supersedesSessionInput.value.trim(); });
+  if (els.clearSessionMetaBtn) els.clearSessionMetaBtn.addEventListener('click', function () {
+    els.assessorInitialsInput.value = '';
+    els.stationNumberInput.value = '';
+    els.stationNameInput.value = '';
+    els.supersedesSessionInput.value = '';
+    state.supersedesSessionId = '';
+  });
   els.treeViewCloseBtn.addEventListener('click', closeTreeView);
   els.treeViewOverlay.addEventListener('click', function (e) { if (e.target === els.treeViewOverlay) closeTreeView(); });
   els.treeViewCreateQuestionBtn.addEventListener('click', function () { openTreeViewCreatePayloadPanel('node'); });

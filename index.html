@@ -39,7 +39,10 @@
           <span class="pill" id="toolVersion">Rule set: -</span>
         </div>
         <div id="sessionMetaCard" class="card hidden">
-          <p class="card-title">Session details</p>
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Session details</p>
+            <button class="btn-small" id="clearSessionMetaBtn" type="button">Clear</button>
+          </div>
           <div class="meta-grid">
             <div class="meta-field"><label for="assessorInitialsInput">Assessor initials</label><input id="assessorInitialsInput" class="input" type="text" maxlength="20" placeholder="e.g. HS,AS,DW,RD,RH" /></div>
             <div class="meta-field"><label for="stationNumberInput">Station number</label><input id="stationNumberInput" class="input" type="text" maxlength="50" placeholder="e.g. 123456A" /></div>
