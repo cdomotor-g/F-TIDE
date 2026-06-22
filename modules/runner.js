@@ -59,7 +59,7 @@ export function updateButtons() {
   var canExport = hasTree && (state.history.length > 0 || !!state.currentResult);
   var canEdit = hasTree && !!state.currentPayload;
   if (els.saveTreeBtn) els.saveTreeBtn.disabled = !hasTree;
-if (els.saveSessionBtn) els.saveSessionBtn.disabled = !hasTree;
+  if (els.saveSessionModalBtn) els.saveSessionModalBtn.disabled = !hasTree;
   if (els.openTreeViewBtn) els.openTreeViewBtn.disabled = !hasTree;
   if (els.openTablesBtn) els.openTablesBtn.disabled = !hasTree;
   els.restartBtn.disabled = !hasTree;

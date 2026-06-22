@@ -3,7 +3,7 @@ import { els } from './modules/dom.js';
 import { setSaveStatus, updateButtons, renderCurrentPayloadJson, renderOptionTargetRows, updateProgress, restart, goBack, copyCurrentId, applyMissingRuleSelection, saveMissingRuleCase } from './modules/runner.js';
 import { setEditorMode, openCurrentPayloadEditor, closeEditor, openCreatePayloadPanel, closeCreatePayloadPanel, createPayloadFromDraft, openTreeViewCreatePayloadPanel, handlePayloadFormInput, handlePayloadFormClick, deleteCurrentPayload, renameCurrentPayloadId, applyCurrentPayloadEdits, closeIconPicker, chooseIconForScope, cancelValidationWarningModal, proceedValidationWarningModal } from './modules/editor.js';
 import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView } from './modules/tree-view.js';
-import { handleJsonFileSelected, saveTreeJson, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions } from './modules/file-ops.js';
+import { handleJsonFileSelected, saveTreeJson, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile } from './modules/file-ops.js';
 
 init();
 
@@ -56,6 +56,7 @@ els.restartBtn.addEventListener('click', restart);
       if (els.validationWarningOverlay && !els.validationWarningOverlay.classList.contains('hidden')) { cancelValidationWarningModal(); return; }
       if (!els.editorModalOverlay.classList.contains('hidden')) { closeEditor(); return; }
       if (!els.treeViewOverlay.classList.contains('hidden')) { closeTreeView(); return; }
+      if (els.sessionsModalOverlay && !els.sessionsModalOverlay.classList.contains('hidden')) { closeSessionsModal(); return; }
     }
   });
   els.deletePayloadBtn.addEventListener('click', deleteCurrentPayload);
@@ -63,7 +64,12 @@ els.restartBtn.addEventListener('click', restart);
   els.applyNodeEditsBtn.addEventListener('click', function () { applyCurrentPayloadEdits(false); });
   els.applyAndSaveNodeEditsBtn.addEventListener('click', function () { applyCurrentPayloadEdits(true); });
   els.exportReportBtn.addEventListener('click', exportReport);
-  els.saveSessionBtn.addEventListener('click', saveCurrentSession);
+  if (els.sessionsBtn) els.sessionsBtn.addEventListener('click', openSessionsModal);
+  if (els.closeSessionsBtn) els.closeSessionsBtn.addEventListener('click', closeSessionsModal);
+  if (els.saveSessionModalBtn) els.saveSessionModalBtn.addEventListener('click', saveCurrentSession);
+  if (els.exportSessionsBtn) els.exportSessionsBtn.addEventListener('click', exportSessionsJson);
+  if (els.importSessionsInput) els.importSessionsInput.addEventListener('change', handleImportSessionsFile);
+  if (els.sessionsModalOverlay) els.sessionsModalOverlay.addEventListener('click', function (e) { if (e.target === els.sessionsModalOverlay) closeSessionsModal(); });
   els.showSchemaBtn.addEventListener('click', openSchemaModal);
   els.closeSchemaBtn.addEventListener('click', closeSchemaModal);
   els.openTreeViewBtn.addEventListener('click', openTreeView);

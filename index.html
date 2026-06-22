@@ -22,7 +22,7 @@
             <label class="file-label" for="jsonFileInput">Load tree.json</label>
             <input class="file-input" id="jsonFileInput" type="file" accept=".json,application/json" />
             <button class="btn" id="saveTreeBtn" type="button" disabled>Save tree.json</button>
-<button class="btn" id="saveSessionBtn" type="button" disabled>Save session</button>
+<button class="btn" id="sessionsBtn" type="button">Sessions</button>
             <button class="btn" id="showSchemaBtn" type="button">Show tree schema</button>
               <div id="schemaModalOverlay" class="modal-overlay hidden">
                 <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="schemaModalTitle">
@@ -222,6 +222,23 @@
         <button class="btn-small" id="tablesCloseBtn" type="button">Close</button>
       </div>
       <div class="tables-content" id="tablesContent"></div>
+    </div>
+  </div>
+
+  <div id="sessionsModalOverlay" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="sessionsModalTitle">
+      <div class="modal-header">
+        <h2 id="sessionsModalTitle" style="margin:0;">Sessions</h2>
+        <button class="btn-small" id="closeSessionsBtn" type="button">Close</button>
+      </div>
+      <div class="sessions-toolbar">
+        <button class="btn" id="saveSessionModalBtn" type="button">Save current session</button>
+        <label class="btn" for="importSessionsInput">Import sessions.json</label>
+        <input class="file-input" id="importSessionsInput" type="file" accept=".json,application/json" />
+        <button class="btn" id="exportSessionsBtn" type="button">Export sessions.json</button>
+      </div>
+      <p id="sessionsModalMessage" class="footnote" style="min-height:1.4em; margin: 4px 0 12px;"></p>
+      <div id="sessionsListContainer"></div>
     </div>
   </div>
 

@@ -3,7 +3,7 @@ import { els } from './dom.js';
 import { STORAGE_KEY, SESSION_STORAGE_KEY, SESSION_HISTORY_KEY, DEFAULT_ICON } from './constants.js';
 import { clone, escapeHtml, escapeAttr, slugify, sortKeysDeep, simpleHashFallback, downloadFile, padNumber, flashButtonText } from './utils.js';
 import { validateTree, formatTreeValidationWarningSummary } from './validation.js';
-import { setSaveStatus, clearMissingRuleForm, hideResultView, renderNode } from './runner.js';
+import { setSaveStatus, clearMissingRuleForm, hideResultView, renderNode, renderResult } from './runner.js';
 import { updateEditorDirtyState } from './editor.js';
 import { buildTreeTablesHtml } from './tree-view.js';
 
@@ -184,19 +184,178 @@ export function saveCurrentSession() {
     currentMode: state.currentMode,
     currentPayload: state.currentPayload
   };
-  var sessions = [];
-  try {
-    var raw = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (raw) sessions = JSON.parse(raw);
-  } catch (_err) { sessions = []; }
+  var sessions = readAllSessions();
   var existingIndex = sessions.findIndex(function (s) { return s.id === id; });
   if (existingIndex !== -1) sessions[existingIndex] = session; else sessions.push(session);
   try {
     localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessions, null, 2));
-    if (els.saveSessionBtn) flashButtonText(els.saveSessionBtn, 'Session saved');
+    if (els.saveSessionModalBtn) flashButtonText(els.saveSessionModalBtn, 'Saved');
+    if (els.sessionsModalMessage) els.sessionsModalMessage.textContent = 'Session saved.';
+    renderSessionsList();
   } catch (_err) {
-    if (els.saveSessionBtn) els.saveSessionBtn.textContent = 'Save failed';
+    if (els.sessionsModalMessage) els.sessionsModalMessage.textContent = 'Save failed.';
   }
+}
+
+export function readAllSessions() {
+  try {
+    var raw = localStorage.getItem(SESSION_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (_err) { return []; }
+}
+
+export function openSessionsModal() {
+  if (els.saveSessionModalBtn) els.saveSessionModalBtn.disabled = !state.tree;
+  if (els.sessionsModalMessage) els.sessionsModalMessage.textContent = '';
+  renderSessionsList();
+  if (els.sessionsModalOverlay) els.sessionsModalOverlay.classList.remove('hidden');
+  setTimeout(function () { if (els.closeSessionsBtn) els.closeSessionsBtn.focus(); }, 0);
+}
+
+export function closeSessionsModal() {
+  if (els.sessionsModalOverlay) els.sessionsModalOverlay.classList.add('hidden');
+}
+
+export function renderSessionsList() {
+  if (!els.sessionsListContainer) return;
+  var sessions = readAllSessions().slice().sort(function (a, b) {
+    return new Date(b.savedAt) - new Date(a.savedAt);
+  });
+  if (!sessions.length) {
+    els.sessionsListContainer.innerHTML = '<p class="sessions-empty">No saved sessions yet.</p>';
+    return;
+  }
+  els.sessionsListContainer.innerHTML = '';
+  var list = document.createElement('div');
+  list.className = 'sessions-list';
+  sessions.forEach(function (session) {
+    var item = document.createElement('div');
+    item.className = 'session-item';
+    var header = document.createElement('div');
+    header.className = 'session-item-header';
+    var left = document.createElement('div');
+    var idEl = document.createElement('div');
+    idEl.className = 'session-item-id';
+    idEl.textContent = session.id || session.sessionId || '—';
+    var metaParts = [];
+    if (session.treeTitle) metaParts.push(session.treeTitle);
+    if (session.treeVersion) metaParts.push(session.treeVersion);
+    if (session.stationNumber) metaParts.push('Station ' + session.stationNumber);
+    if (session.stationName) metaParts.push(session.stationName);
+    if (session.assessorInitials) metaParts.push(session.assessorInitials);
+    if (session.savedAt) metaParts.push(new Date(session.savedAt).toLocaleString());
+    var metaEl = document.createElement('div');
+    metaEl.className = 'session-item-meta';
+    metaEl.textContent = metaParts.join(' · ');
+    left.appendChild(idEl);
+    left.appendChild(metaEl);
+    var actions = document.createElement('div');
+    actions.className = 'session-item-actions';
+    var loadBtn = document.createElement('button');
+    loadBtn.type = 'button';
+    loadBtn.className = 'btn-small';
+    loadBtn.textContent = 'Load';
+    loadBtn.disabled = !state.tree;
+    loadBtn.addEventListener('click', function () { loadSession(session); });
+    var deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn-small';
+    deleteBtn.textContent = 'Delete';
+    deleteBtn.addEventListener('click', function () {
+      if (confirm('Delete session ' + (session.id || session.sessionId) + '?')) {
+        deleteSession(session.id || session.sessionId);
+      }
+    });
+    actions.appendChild(loadBtn);
+    actions.appendChild(deleteBtn);
+    header.appendChild(left);
+    header.appendChild(actions);
+    item.appendChild(header);
+    var stepCount = Array.isArray(session.path) ? session.path.length : 0;
+    var stepsEl = document.createElement('div');
+    stepsEl.className = 'session-item-meta';
+    stepsEl.textContent = stepCount + ' step' + (stepCount === 1 ? '' : 's') + ' · ' + (session.currentMode === 'result' ? 'Reached outcome' : 'In progress');
+    item.appendChild(stepsEl);
+    list.appendChild(item);
+  });
+  els.sessionsListContainer.appendChild(list);
+}
+
+export function deleteSession(id) {
+  var sessions = readAllSessions().filter(function (s) { return (s.id || s.sessionId) !== id; });
+  try {
+    localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessions, null, 2));
+  } catch (_err) { }
+  renderSessionsList();
+}
+
+export function loadSession(session) {
+  if (!state.tree) {
+    if (els.sessionsModalMessage) els.sessionsModalMessage.textContent = 'Load a tree.json first.';
+    return;
+  }
+  if (session.treeVersionHash && state.tree.versionHash && session.treeVersionHash !== state.tree.versionHash) {
+    if (!confirm('This session was saved with a different tree version (' + (session.treeVersion || '?') + ' vs current ' + (state.tree.version || '?') + '). Loading may not match exactly. Continue?')) return;
+  }
+  state.comments = {};
+  (session.path || []).forEach(function (step) {
+    if (step.nodeId && step.comment) state.comments[step.nodeId] = step.comment;
+  });
+  state.sessionId = session.sessionId || session.id || '';
+  state.supersedesSessionId = session.supersedesSessionId || '';
+  state.sessionLinks = {};
+  if (els.assessorInitialsInput) els.assessorInitialsInput.value = session.assessorInitials || '';
+  if (els.stationNumberInput) els.stationNumberInput.value = session.stationNumber || '';
+  if (els.stationNameInput) els.stationNameInput.value = session.stationName || '';
+  renderSessionMetadata();
+  state.history = (session.path || []).map(function (step) {
+    return { nodeId: step.nodeId, question: step.question, answer: step.answer, next: step.next, icon: step.icon || DEFAULT_ICON, comment: step.comment || '' };
+  });
+  if (session.currentMode === 'result') {
+    var lastStep = state.history[state.history.length - 1];
+    var resultId = lastStep && lastStep.next && state.tree.results[lastStep.next] ? lastStep.next : null;
+    var result = resultId ? state.tree.results[resultId] : (session.currentPayload || null);
+    state.currentNodeId = session.currentNodeId || state.tree.startNode;
+    if (result) { renderResult(result); } else { renderNode(); }
+  } else {
+    state.currentNodeId = session.currentNodeId || state.tree.startNode;
+    renderNode();
+  }
+  closeSessionsModal();
+}
+
+export function exportSessionsJson() {
+  var sessions = readAllSessions();
+  downloadFile(JSON.stringify({ sessions: sessions }, null, 2), 'sessions.json', 'application/json');
+}
+
+export function handleImportSessionsFile(event) {
+  var file = event.target.files && event.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    try {
+      var parsed = JSON.parse(e.target.result);
+      var incoming = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.sessions) ? parsed.sessions : []);
+      if (!incoming.length) {
+        if (els.sessionsModalMessage) els.sessionsModalMessage.textContent = 'No sessions found in file.';
+        return;
+      }
+      var existing = readAllSessions();
+      incoming.forEach(function (s) {
+        var sid = s.id || s.sessionId;
+        var idx = existing.findIndex(function (ex) { return (ex.id || ex.sessionId) === sid; });
+        if (idx !== -1) existing[idx] = s; else existing.push(s);
+      });
+      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(existing, null, 2));
+      renderSessionsList();
+      if (els.sessionsModalMessage) els.sessionsModalMessage.textContent = 'Imported ' + incoming.length + ' session' + (incoming.length === 1 ? '' : 's') + '.';
+    } catch (err) {
+      if (els.sessionsModalMessage) els.sessionsModalMessage.textContent = 'Import failed: ' + err.message;
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
 }
 
 export function buildReportHtml(meta) {

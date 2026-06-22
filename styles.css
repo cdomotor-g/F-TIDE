@@ -497,6 +497,16 @@ details summary::-webkit-details-marker { display: none; }
 
 .mini-tree-edge.path { stroke: #f59e0b; stroke-width: 2.2; opacity: 0.95; }
 .mini-tree-node.path { fill: #7c3aed; stroke: #ddd6fe; stroke-width: 2.2; }
+
+/* Sessions modal */
+.sessions-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+.sessions-list { display: grid; gap: 10px; max-height: 480px; overflow-y: auto; padding-right: 4px; }
+.session-item { padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: rgba(15, 23, 39, 0.7); }
+.session-item-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+.session-item-id { font-family: Consolas, Menlo, Monaco, monospace; font-size: 13px; color: #c7d2fe; margin-bottom: 3px; }
+.session-item-meta { font-size: 13px; color: var(--muted); }
+.session-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.sessions-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 0; }
 .mini-tree-node.path.current { fill: #f97316; stroke: #fde68a; stroke-width: 3.4; }
 
 
