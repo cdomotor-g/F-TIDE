@@ -4,6 +4,8 @@ A browser-based decision-support tool for structured evaluations of flood warnin
 
 ## Quick start
 
+Available through GitHub Pages at: https://cdomotor-g.github.io/F-TIDE/
+
 No installation required. Open `index.html` directly in a browser, or serve it with any static file server:
 
 ```bash
