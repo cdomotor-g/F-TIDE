@@ -76,7 +76,7 @@
     nodes.push({
       x: x,
       y: y,
-      radius: rnd(0.9, 2.0),
+      radius: rnd(0.3, 1.0),
       opacity: 0,
       life: 0,
       totalLife: Math.floor(rnd(350, 750)),
@@ -133,7 +133,7 @@
       if (!f.branched && f.life >= f.branchAge) {
         f.branched = true;
         spawnNode(f.x, f.y);
-        var numChildren = Math.random() < 0.6 ? 2 : 1;
+        var numChildren = Math.random() < 0.6 ? 4 : 1;
         for (var c = 0; c < numChildren; c++) {
           if (filaments.length < MAX_FILAMENTS + 4) {
             var dev = rnd(0.18, 0.68) * (Math.random() < 0.5 ? 1 : -1);
