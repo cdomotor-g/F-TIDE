@@ -502,14 +502,16 @@ export function buildTreeTablesHtml(options) {
   });
   html += '</tbody></table></div>';
   html += '<div class="table-section"><' + headingTag + '>Decision Paths (Node &rarr; Next Node)</' + headingTag + '>';
-  html += '<table><thead><tr><th>From Node</th><th>Option Label</th><th>To Node</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th>From Node</th><th>Option Label</th><th>To Node</th><th>Risk Score</th></tr></thead><tbody>';
   Object.keys(state.tree.nodes).forEach(function (id) {
     var node = state.tree.nodes[id];
     node.options.forEach(function (option) {
+      var rs = typeof option.riskScore === 'number' ? (option.riskScore > 0 ? '+' + option.riskScore : String(option.riskScore)) : '—';
       html += '<tr' + buildTreeTableRowAttrs(id, editable) + '>';
       html += '<td>' + escapeHtml(id) + '</td>';
       html += '<td>' + escapeHtml(option.label || '(unlabeled)') + '</td>';
       html += '<td>' + escapeHtml(option.next || '') + '</td>';
+      html += '<td class="table-risk-score">' + escapeHtml(rs) + '</td>';
       html += '</tr>';
     });
   });

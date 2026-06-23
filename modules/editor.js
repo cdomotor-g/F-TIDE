@@ -388,6 +388,7 @@ export function buildCheckboxField(scope, name, label, checked, help) {
 }
 
 export function buildOptionRow(scope, option, index, total) {
+  var riskScore = typeof option.riskScore === 'number' ? String(option.riskScore) : '';
   return '<div class="editor-row">' +
     '<div class="editor-row-head"><div class="editor-row-title">Option ' + (index + 1) + '</div><div class="editor-row-actions">' +
     '<button type="button" class="btn-small" data-action="move-option-up" data-scope="' + scope + '" data-index="' + index + '" ' + (index === 0 ? 'disabled' : '') + '>Up</button>' +
@@ -397,6 +398,7 @@ export function buildOptionRow(scope, option, index, total) {
     '<div class="editor-row-grid">' +
     '<div class="editor-field"><label>Label</label><input data-scope="' + scope + '" data-option-field="label" data-index="' + index + '" type="text" value="' + escapeAttr(option && option.label || '') + '" /></div>' +
     '<div class="editor-field"><label>Next target</label>' + buildTargetSelect(scope, index, option && option.next || '') + '<div class="editor-help">Question nodes and results are both listed.</div></div>' +
+    '<div class="editor-field"><label>Risk score</label><input data-scope="' + scope + '" data-option-field="riskScore" data-index="' + index + '" type="number" step="1" value="' + escapeAttr(riskScore) + '" placeholder="0" /><div class="editor-help">Points added to cumulative risk when this answer is chosen.</div></div>' +
     '</div></div>';
 }
 
@@ -491,11 +493,16 @@ export function syncScopeDraftFromForm(scope) {
     var optionMap = {};
     Array.prototype.forEach.call(root.querySelectorAll('[data-option-field]'), function (el) {
       var idx = Number(el.getAttribute('data-index'));
-      if (!optionMap[idx]) optionMap[idx] = { label: '', next: '' };
+      if (!optionMap[idx]) optionMap[idx] = { label: '', next: '', riskScore: '' };
       optionMap[idx][el.getAttribute('data-option-field')] = el.value;
     });
     Object.keys(optionMap).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (key) {
-      payload.options.push({ label: String(optionMap[key].label || '').trim(), next: String(optionMap[key].next || '').trim() });
+      var entry = optionMap[key];
+      var opt = { label: String(entry.label || '').trim(), next: String(entry.next || '').trim() };
+      if (entry.riskScore !== '' && entry.riskScore !== undefined && !isNaN(Number(entry.riskScore))) {
+        opt.riskScore = Number(entry.riskScore);
+      }
+      payload.options.push(opt);
     });
   } else {
     payload.title = readFieldValue(root, 'title');

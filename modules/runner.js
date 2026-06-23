@@ -241,6 +241,7 @@ export function renderOptionTargetRows(node) {
     return;
   }
   els.emptyTargets.classList.add('hidden');
+  var hasRiskBands = state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length > 0;
   node.options.forEach(function (option) {
     var row = document.createElement('div');
     row.className = 'option-target-row';
@@ -259,6 +260,12 @@ export function renderOptionTargetRows(node) {
     meta.textContent = state.tree.nodes[option.next] ? 'Question node' : (state.tree.results[option.next] ? 'Result' : 'Unknown');
     target.appendChild(id);
     target.appendChild(meta);
+    if (hasRiskBands && typeof option.riskScore === 'number') {
+      var rsPill = document.createElement('span');
+      rsPill.className = 'option-risk-pill';
+      rsPill.textContent = option.riskScore > 0 ? '+' + option.riskScore : String(option.riskScore);
+      target.appendChild(rsPill);
+    }
     row.appendChild(button);
     row.appendChild(target);
     els.optionTargetGrid.appendChild(row);
@@ -270,6 +277,7 @@ export function renderPathTable(result) {
   if (state.history.length === 0 && !result) { els.emptyTrail.classList.remove('hidden'); return; }
   els.emptyTrail.classList.add('hidden');
   var hasRiskBands = state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length > 0;
+  var runningTotal = 0;
   state.history.forEach(function (step, index) {
     var tr = document.createElement('tr');
     var tdIndex = document.createElement('td'); tdIndex.className = 'index-col'; tdIndex.textContent = String(index + 1);
@@ -282,8 +290,15 @@ export function renderPathTable(result) {
     var tdComment = document.createElement('td'); tdComment.textContent = step.comment || '';
     var tdScore = document.createElement('td'); tdScore.className = 'score-col';
     if (hasRiskBands) {
-      var rs = step.riskScore;
-      tdScore.textContent = rs > 0 ? '+' + rs : (rs < 0 ? String(rs) : '—');
+      var rs = step.riskScore || 0;
+      runningTotal += rs;
+      var stepText = rs > 0 ? '+' + rs : (rs < 0 ? String(rs) : '—');
+      tdScore.textContent = stepText;
+      var totalSpan = document.createElement('span');
+      totalSpan.className = 'score-running-total';
+      totalSpan.textContent = 'Σ' + runningTotal;
+      tdScore.appendChild(document.createElement('br'));
+      tdScore.appendChild(totalSpan);
     }
     tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdComment); tr.appendChild(tdScore);
     els.pathTableBody.appendChild(tr);
