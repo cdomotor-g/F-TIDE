@@ -14,6 +14,7 @@ var state = {
   changeLog: [],
   currentNodeId: null,
   history: [],
+  currentScore: 0,
   currentMode: 'node',
   currentPayload: null,
   comments: {},
@@ -157,6 +158,9 @@ var els = {
   resultBox: document.getElementById('resultBox'),
   resultRecommendation: document.getElementById('resultRecommendation'),
   resultRationale: document.getElementById('resultRationale'),
+  riskScoreWrap: document.getElementById('riskScoreWrap'),
+  riskScoreNumber: document.getElementById('riskScoreNumber'),
+  riskScoreBand: document.getElementById('riskScoreBand'),
   missingRuleBox: document.getElementById('missingRuleBox'),
   missingRuleSelect: document.getElementById('missingRuleSelect'),
   missingRuleText: document.getElementById('missingRuleText'),
@@ -622,13 +626,16 @@ function renderNode() {
 }
 
 function selectOption(node, option) {
+  var score = typeof option.riskScore === 'number' ? option.riskScore : 0;
+  state.currentScore = (state.currentScore || 0) + score;
   state.history.push({
     nodeId: node.id,
     question: node.question,
     answer: option.label,
     next: option.next,
     icon: getIcon(node),
-    comment: state.comments[node.id] || ''
+    comment: state.comments[node.id] || '',
+    riskScore: score
   });
   if (state.tree.nodes[option.next]) { state.currentNodeId = option.next; renderNode(); return; }
   if (state.tree.results[option.next]) { renderResult(state.tree.results[option.next]); return; }
@@ -652,6 +659,24 @@ function renderResult(result) {
     els.missingRuleBox.classList.add('hidden');
     clearMissingRuleForm();
   }
+  if (els.riskScoreWrap && !result.isMissingRule && state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length) {
+    var score = state.currentScore || 0;
+    var band = null;
+    for (var i = 0; i < state.tree.riskBands.length; i++) {
+      var b = state.tree.riskBands[i];
+      if (typeof b.max === 'undefined' || score <= b.max) { band = b; break; }
+    }
+    if (band) {
+      els.riskScoreNumber.textContent = String(score);
+      els.riskScoreBand.textContent = band.label;
+      els.riskScoreBand.className = 'risk-band-pill ' + band.label.toLowerCase();
+      els.riskScoreWrap.classList.remove('hidden');
+    } else {
+      els.riskScoreWrap.classList.add('hidden');
+    }
+  } else if (els.riskScoreWrap) {
+    els.riskScoreWrap.classList.add('hidden');
+  }
   renderCurrentPayload(result);
   renderPathTable(result);
   updateProgress();
@@ -662,6 +687,7 @@ function restart() {
   if (!state.tree) return;
   state.currentNodeId = state.tree.startNode;
   state.history = [];
+  state.currentScore = 0;
   state.currentMode = 'node';
   state.currentPayload = state.tree.nodes[state.tree.startNode];
   state.currentResult = null;
@@ -673,7 +699,8 @@ function restart() {
 
 function goBack() {
   if (!state.tree || state.history.length === 0) return;
-  state.history.pop();
+  var popped = state.history.pop();
+  state.currentScore = Math.max(0, (state.currentScore || 0) - (popped.riskScore || 0));
   if (state.history.length === 0) state.currentNodeId = state.tree.startNode;
   else {
     var previous = state.history[state.history.length - 1];
@@ -2603,7 +2630,17 @@ function buildReportHtml(meta) {
       + '</tr>';
   }).join('');
   var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td></tr>' : '';
-  var rationaleBlock = state.currentResult ? '<section class="box"><h2>Recommendation</h2><p><strong>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</strong></p><p>' + escapeHtml(state.currentResult.rationale || '') + '</p></section>' : '';
+  var riskScoreBlock = '';
+  if (state.currentResult && !state.currentResult.isMissingRule && state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length) {
+    var rScore = state.currentScore || 0;
+    var rBand = null;
+    for (var ri = 0; ri < state.tree.riskBands.length; ri++) {
+      var rb = state.tree.riskBands[ri];
+      if (typeof rb.max === 'undefined' || rScore <= rb.max) { rBand = rb; break; }
+    }
+    if (rBand) riskScoreBlock = '<p><strong>Delivery Risk Score:</strong> ' + rScore + ' — ' + escapeHtml(rBand.label) + '</p>';
+  }
+  var rationaleBlock = state.currentResult ? '<section class="box"><h2>Recommendation</h2><p><strong>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</strong></p><p>' + escapeHtml(state.currentResult.rationale || '') + '</p>' + riskScoreBlock + '</section>' : '';
   var treeTablesBlock = '<section class="box tree-snapshot"><h2>Current tree.json snapshot</h2><p class="tree-version"><strong>Tree version:</strong> ' + escapeHtml(state.tree.version || '-') + '</p><p class="tree-version"><strong>Version hash:</strong> ' + escapeHtml(state.tree.versionHash || '-') + '</p><p class="tree-version"><strong>Branch:</strong> ' + escapeHtml(state.tree.branchId || 'main') + '</p>' + buildTreeTablesHtml({ editable: false, headingLevel: 3 }) + '</section>';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0" />' +
