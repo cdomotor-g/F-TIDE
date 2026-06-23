@@ -221,6 +221,7 @@ body {
 .path-table th { background: var(--table-head); color: var(--muted); font-weight: 600; }
 .path-table tbody tr { background: var(--table-row); }
 .index-col { width: 56px; color: var(--muted); }
+.score-col { width: 52px; text-align: right; white-space: nowrap; color: var(--muted); font-variant-numeric: tabular-nums; }
 .path-question-cell { display:flex; gap:10px; align-items:flex-start; }
 .path-icon { width: 28px; height: 28px; font-size: 14px; flex-basis: 28px; }
 details { border: 1px solid var(--border); border-radius: 12px; background: var(--code-bg); overflow: hidden; margin-top: 12px; }
