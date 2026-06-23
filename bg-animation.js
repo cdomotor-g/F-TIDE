@@ -31,8 +31,8 @@
 
   var filaments = [];
   var nodes = [];
-  var MAX_FILAMENTS = 26;
-  var MAX_NODES = 28;
+  var MAX_FILAMENTS = 52;
+  var MAX_NODES = 56;
   var globalPhase = 0;
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
@@ -60,7 +60,7 @@
       maxOpacity: mo,
       fadeAge: fadeAge,
       totalLife: totalLife,
-      branchAge: Math.floor(rnd(50, 135)),
+      branchAge: Math.floor(rnd(25, 67)),
       branched: false,
       life: 0,
       width: rnd(0.4, 1.05),
@@ -83,7 +83,7 @@
   }
 
   // Seed initial filaments at staggered ages
-  for (var i = 0; i < 14; i++) {
+  for (var i = 0; i < 28; i++) {
     spawnFilament(null, null, null, null);
     filaments[i].life = Math.floor(rnd(0, 55));
   }
