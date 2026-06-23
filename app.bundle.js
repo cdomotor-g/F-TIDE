@@ -1023,7 +1023,12 @@ function toggleTreeViewQuestionsOnly() {
     els.treeViewQuestionsOnlyBtn.style.borderColor = '';
   }
   var resultNodes = treeViewCy.nodes().filter(function (node) { return node.hasClass('result'); });
-  if (treeViewQuestionsOnly) resultNodes.hide(); else resultNodes.show();
+  if (treeViewQuestionsOnly) {
+    resultNodes.hide();
+  } else {
+    resultNodes.show();
+    resultNodes.connectedEdges().show();
+  }
   treeViewCy.fit(treeViewCy.elements(':visible'), 40);
 }
 
