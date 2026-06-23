@@ -54,8 +54,7 @@
     filaments.push({
       x: x != null ? x : rnd(0.05, 0.95) * W,
       y: y != null ? y : rnd(0.05, 0.95) * H,
-      angle: angle != null ? angle : rnd(0, Math.PI * 4),
-      angleVel: 0,
+      angle: angle != null ? angle : rnd(0, Math.PI * 2),
       speed: rnd(0.56, 1.24),
       opacity: 0,
       maxOpacity: mo,
@@ -108,12 +107,7 @@
       var f = filaments[i];
       f.life++;
 
-      // Smooth random-walk angle change
-      f.angleVel += (Math.random() - 0.5) * 0.0075;
-      f.angleVel = clamp(f.angleVel, -0.024, 0.024);
-      f.angleVel *= 2
-      f.angle += f.angleVel;
-
+      // Straight-line movement — angle is fixed between branch points
       f.px = f.x;
       f.py = f.y;
       f.x += f.speed * Math.cos(f.angle);
@@ -129,15 +123,15 @@
         f.opacity = f.maxOpacity;
       }
 
-      // Branch point: spawn node + child filaments
+      // Branch point: sharp direction change on parent + 0-3 new filaments (1-4 total paths)
       if (!f.branched && f.life >= f.branchAge) {
         f.branched = true;
         spawnNode(f.x, f.y);
-        var numChildren = Math.random() < 0.7 ? 4 : 1;
-        for (var c = 0; c < numChildren; c++) {
+        var numBranches = Math.floor(rnd(1, 5)); // 1-4 inclusive
+        f.angle = rnd(0, Math.PI * 2); // parent takes a sharp new direction
+        for (var c = 1; c < numBranches; c++) {
           if (filaments.length < MAX_FILAMENTS + 4) {
-            var dev = rnd(0.18, 0.68) * (Math.random() < 0.7 ? 1 : -1);
-            spawnFilament(f.x, f.y, f.angle + dev, f.maxOpacity);
+            spawnFilament(f.x, f.y, rnd(0, Math.PI * 2), f.maxOpacity);
           }
         }
       }
