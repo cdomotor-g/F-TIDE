@@ -72,6 +72,7 @@ els.restartBtn.addEventListener('click', restart);
       if (!els.editorModalOverlay.classList.contains('hidden')) { closeEditor(); return; }
       if (!els.treeViewOverlay.classList.contains('hidden')) { closeTreeView(); return; }
       if (els.sessionsModalOverlay && !els.sessionsModalOverlay.classList.contains('hidden')) { closeSessionsModal(); return; }
+      if (els.schemaModalOverlay && !els.schemaModalOverlay.classList.contains('hidden')) { closeSchemaModal(); return; }
     }
   });
   els.deletePayloadBtn.addEventListener('click', deleteCurrentPayload);
@@ -87,6 +88,7 @@ els.restartBtn.addEventListener('click', restart);
   if (els.sessionsModalOverlay) els.sessionsModalOverlay.addEventListener('click', function (e) { if (e.target === els.sessionsModalOverlay) closeSessionsModal(); });
   els.showSchemaBtn.addEventListener('click', openSchemaModal);
   els.closeSchemaBtn.addEventListener('click', closeSchemaModal);
+  if (els.schemaModalOverlay) els.schemaModalOverlay.addEventListener('click', function (e) { if (e.target === els.schemaModalOverlay) closeSchemaModal(); });
   els.miniTreeCard.addEventListener('click', openTreeView);
   els.miniTreeCard.addEventListener('keydown', function (event) {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -138,7 +140,16 @@ els.restartBtn.addEventListener('click', restart);
 
 async function openSchemaModal() {
   if (!els.treeSchemaText) return;
+  if (els.readmeText) els.readmeText.textContent = 'Loading…';
   els.treeSchemaText.textContent = 'Loading schema…';
+  try {
+    var readmeResp = await fetch('README.md?' + Date.now());
+    if (els.readmeText) {
+      els.readmeText.textContent = readmeResp.ok ? await readmeResp.text() : '// README.md not found';
+    }
+  } catch (err) {
+    if (els.readmeText) els.readmeText.textContent = '// Could not load README.md';
+  }
   try {
     var resp = await fetch('tree_schema.json?' + Date.now());
     if (!resp.ok) throw new Error('tree_schema.json not found');
