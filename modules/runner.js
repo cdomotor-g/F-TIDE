@@ -269,6 +269,7 @@ export function renderPathTable(result) {
   els.pathTableBody.innerHTML = '';
   if (state.history.length === 0 && !result) { els.emptyTrail.classList.remove('hidden'); return; }
   els.emptyTrail.classList.add('hidden');
+  var hasRiskBands = state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length > 0;
   state.history.forEach(function (step, index) {
     var tr = document.createElement('tr');
     var tdIndex = document.createElement('td'); tdIndex.className = 'index-col'; tdIndex.textContent = String(index + 1);
@@ -279,7 +280,12 @@ export function renderPathTable(result) {
     wrap.appendChild(icon); wrap.appendChild(text); tdQuestion.appendChild(wrap);
     var tdAnswer = document.createElement('td'); tdAnswer.textContent = step.answer;
     var tdComment = document.createElement('td'); tdComment.textContent = step.comment || '';
-    tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdComment);
+    var tdScore = document.createElement('td'); tdScore.className = 'score-col';
+    if (hasRiskBands) {
+      var rs = step.riskScore;
+      tdScore.textContent = rs > 0 ? '+' + rs : (rs < 0 ? String(rs) : '—');
+    }
+    tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdComment); tr.appendChild(tdScore);
     els.pathTableBody.appendChild(tr);
   });
   if (result) {
@@ -287,7 +293,10 @@ export function renderPathTable(result) {
     var a = document.createElement('td'); a.className = 'index-col'; a.textContent = String(state.history.length + 1);
     var b = document.createElement('td'); b.textContent = 'Outcome';
     var c = document.createElement('td'); c.textContent = result.title || 'Recommendation unavailable';
-    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c);
+    var d = document.createElement('td');
+    var e = document.createElement('td'); e.className = 'score-col';
+    if (hasRiskBands) { e.textContent = String(state.currentScore || 0); }
+    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tr.appendChild(d); tr.appendChild(e);
     els.pathTableBody.appendChild(tr);
   }
 }
@@ -320,6 +329,7 @@ export function renderNode() {
 export function selectOption(node, option) {
   var score = typeof option.riskScore === 'number' ? option.riskScore : 0;
   state.currentScore = (state.currentScore || 0) + score;
+  updateRiskScoreBar();
   state.history.push({
     nodeId: node.id,
     question: node.question,
