@@ -87,7 +87,6 @@ els.restartBtn.addEventListener('click', restart);
   if (els.sessionsModalOverlay) els.sessionsModalOverlay.addEventListener('click', function (e) { if (e.target === els.sessionsModalOverlay) closeSessionsModal(); });
   els.showSchemaBtn.addEventListener('click', openSchemaModal);
   els.closeSchemaBtn.addEventListener('click', closeSchemaModal);
-  els.openTreeViewBtn.addEventListener('click', openTreeView);
   els.miniTreeCard.addEventListener('click', openTreeView);
   els.miniTreeCard.addEventListener('keydown', function (event) {
     if (event.key === 'Enter' || event.key === ' ') {

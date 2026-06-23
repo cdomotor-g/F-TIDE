@@ -60,7 +60,6 @@ export function updateButtons() {
   var canEdit = hasTree && !!state.currentPayload;
   if (els.saveTreeBtn) els.saveTreeBtn.disabled = !hasTree;
   if (els.saveSessionModalBtn) els.saveSessionModalBtn.disabled = !hasTree;
-  if (els.openTreeViewBtn) els.openTreeViewBtn.disabled = !hasTree;
   if (els.openTablesBtn) els.openTablesBtn.disabled = !hasTree;
   els.restartBtn.disabled = !hasTree;
   els.restartResultBtn.disabled = !hasTree;
@@ -76,6 +75,60 @@ export function updateButtons() {
   els.openCreateResultBtn.disabled = !hasTree;
   els.treeViewCreateQuestionBtn.disabled = !hasTree;
   els.treeViewCreateResultBtn.disabled = !hasTree;
+}
+
+export function updateRiskScoreBar() {
+  if (!els.riskGaugeCard) return;
+  if (!state.tree || !Array.isArray(state.tree.riskBands) || !state.tree.riskBands.length) {
+    els.riskGaugeCard.classList.add('hidden');
+    return;
+  }
+  els.riskGaugeCard.classList.remove('hidden');
+  var bands = state.tree.riskBands;
+  var score = state.currentScore || 0;
+  var lastNamedMax = 0;
+  for (var i = 0; i < bands.length; i++) {
+    if (typeof bands[i].max === 'number' && bands[i].max > lastNamedMax) lastNamedMax = bands[i].max;
+  }
+  var totalRange = lastNamedMax + Math.max(Math.ceil(lastNamedMax * 0.5), 5);
+  var band = null;
+  for (var j = 0; j < bands.length; j++) {
+    var b = bands[j];
+    if (typeof b.max === 'undefined' || score <= b.max) { band = b; break; }
+  }
+  if (els.riskGaugeNumber) els.riskGaugeNumber.textContent = String(score);
+  if (els.riskGaugeBandPill) {
+    if (band) {
+      els.riskGaugeBandPill.textContent = band.label;
+      els.riskGaugeBandPill.className = 'risk-band-pill ' + band.label.toLowerCase();
+    } else {
+      els.riskGaugeBandPill.textContent = '-';
+      els.riskGaugeBandPill.className = 'risk-band-pill';
+    }
+  }
+  var bandColors = { low: '#34d399', medium: '#fbbf24', high: '#f97316', critical: '#f87171' };
+  var defaultColors = ['#34d399', '#fbbf24', '#f97316', '#f87171'];
+  var stops = [];
+  var labelEls = [];
+  var prevPct = 0;
+  bands.forEach(function (bnd, idx) {
+    var color = (bnd.label && bandColors[bnd.label.toLowerCase()]) || defaultColors[idx] || '#f87171';
+    var endPct = typeof bnd.max === 'number' ? Math.min(bnd.max / totalRange, 1) * 100 : 100;
+    stops.push(color + ' ' + prevPct.toFixed(1) + '%');
+    stops.push(color + ' ' + endPct.toFixed(1) + '%');
+    var span = document.createElement('span');
+    span.className = 'risk-gauge-label';
+    span.textContent = bnd.label;
+    span.style.width = (endPct - prevPct).toFixed(1) + '%';
+    labelEls.push(span);
+    prevPct = endPct;
+  });
+  if (els.riskGaugeTrack) els.riskGaugeTrack.style.background = 'linear-gradient(to right, ' + stops.join(', ') + ')';
+  if (els.riskGaugeLabels) {
+    els.riskGaugeLabels.innerHTML = '';
+    labelEls.forEach(function (el) { els.riskGaugeLabels.appendChild(el); });
+  }
+  if (els.riskGaugeCursor) els.riskGaugeCursor.style.left = Math.min(score / totalRange, 1) * 100 + '%';
 }
 
 export function renderCurrentPayloadJson(payload) {
@@ -261,6 +314,7 @@ export function renderNode() {
   renderPathTable();
   updateProgress();
   updateButtons();
+  updateRiskScoreBar();
 }
 
 export function selectOption(node, option) {
@@ -319,6 +373,7 @@ export function renderResult(result) {
   renderPathTable(result);
   updateProgress();
   updateButtons();
+  updateRiskScoreBar();
 }
 
 export function restart() {
