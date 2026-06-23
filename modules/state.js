@@ -3,6 +3,7 @@ export var state = {
   changeLog: [],
   currentNodeId: null,
   history: [],
+  currentScore: 0,
   currentMode: 'node',
   currentPayload: null,
   comments: {},

@@ -222,6 +222,14 @@ body::before {
 .result-title { margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .result-recommendation { margin: 0 0 10px 0; font-size: 30px; line-height: 1.2; font-weight: 700; }
 .result-rationale { margin: 0; line-height: 1.5; }
+.risk-score-wrap { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); }
+.risk-score-row { display: flex; align-items: baseline; gap: 12px; }
+.risk-score-number { font-size: 30px; font-weight: 700; line-height: 1; }
+.risk-band-pill { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; letter-spacing: .04em; text-transform: uppercase; border: 1px solid transparent; }
+.risk-band-pill.low { background: #10261a; color: #34d399; border-color: #34d399; }
+.risk-band-pill.medium { background: #2c220d; color: #fbbf24; border-color: #fbbf24; }
+.risk-band-pill.high { background: #2c1a0d; color: #f97316; border-color: #f97316; }
+.risk-band-pill.critical { background: #2c0d0d; color: #f87171; border-color: #f87171; }
 .missing-box { margin-top: 14px; padding: 16px; border-radius: 14px; border-left: 6px solid var(--warn-border); background: var(--warn-bg); }
 .missing-box label { display: block; font-size: 14px; margin-bottom: 6px; }
 .missing-box textarea {
