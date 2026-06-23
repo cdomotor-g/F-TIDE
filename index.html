@@ -30,7 +30,6 @@
                   <pre id="treeSchemaText" style="font-size:13px; color:#cbd5e1; line-height:1.5; background:#172234; border-radius:10px; padding:18px; margin:0; overflow-x:auto;"></pre>
                 </div>
               </div>
-            <button class="btn" id="openTreeViewBtn" type="button">Open tree map</button>
             <button class="btn" id="openTablesBtn" type="button">Open tables</button>
           </div>
         </div>
@@ -137,6 +136,23 @@
             <span class="pill" id="miniTreeCurrentPill">-</span>
           </div>
           <div id="miniTreeCanvas" class="mini-tree-canvas"></div>
+        </div>
+        <div class="card risk-gauge-card hidden" id="riskGaugeCard">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Risk score</p>
+            <span class="risk-band-pill" id="riskGaugeBandPill">-</span>
+          </div>
+          <div class="risk-gauge-body">
+            <div class="risk-gauge-score-row">
+              <span class="risk-gauge-number" id="riskGaugeNumber">0</span>
+            </div>
+            <div class="risk-gauge-track-wrap">
+              <div class="risk-gauge-track" id="riskGaugeTrack">
+                <div class="risk-gauge-cursor" id="riskGaugeCursor"></div>
+              </div>
+              <div class="risk-gauge-labels" id="riskGaugeLabels"></div>
+            </div>
+          </div>
         </div>
         <div class="card">
           <div class="card-header">
