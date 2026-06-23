@@ -264,13 +264,16 @@ export function renderNode() {
 }
 
 export function selectOption(node, option) {
+  var score = typeof option.riskScore === 'number' ? option.riskScore : 0;
+  state.currentScore = (state.currentScore || 0) + score;
   state.history.push({
     nodeId: node.id,
     question: node.question,
     answer: option.label,
     next: option.next,
     icon: getIcon(node),
-    comment: state.comments[node.id] || ''
+    comment: state.comments[node.id] || '',
+    riskScore: score
   });
   if (state.tree.nodes[option.next]) { state.currentNodeId = option.next; renderNode(); return; }
   if (state.tree.results[option.next]) { renderResult(state.tree.results[option.next]); return; }
@@ -294,6 +297,24 @@ export function renderResult(result) {
     els.missingRuleBox.classList.add('hidden');
     clearMissingRuleForm();
   }
+  if (els.riskScoreWrap && !result.isMissingRule && state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length) {
+    var score = state.currentScore || 0;
+    var band = null;
+    for (var i = 0; i < state.tree.riskBands.length; i++) {
+      var b = state.tree.riskBands[i];
+      if (typeof b.max === 'undefined' || score <= b.max) { band = b; break; }
+    }
+    if (band) {
+      els.riskScoreNumber.textContent = String(score);
+      els.riskScoreBand.textContent = band.label;
+      els.riskScoreBand.className = 'risk-band-pill ' + band.label.toLowerCase();
+      els.riskScoreWrap.classList.remove('hidden');
+    } else {
+      els.riskScoreWrap.classList.add('hidden');
+    }
+  } else if (els.riskScoreWrap) {
+    els.riskScoreWrap.classList.add('hidden');
+  }
   renderCurrentPayload(result);
   renderPathTable(result);
   updateProgress();
@@ -304,6 +325,7 @@ export function restart() {
   if (!state.tree) return;
   state.currentNodeId = state.tree.startNode;
   state.history = [];
+  state.currentScore = 0;
   state.currentMode = 'node';
   state.currentPayload = state.tree.nodes[state.tree.startNode];
   state.currentResult = null;
@@ -315,7 +337,8 @@ export function restart() {
 
 export function goBack() {
   if (!state.tree || state.history.length === 0) return;
-  state.history.pop();
+  var popped = state.history.pop();
+  state.currentScore = Math.max(0, (state.currentScore || 0) - (popped.riskScore || 0));
   if (state.history.length === 0) state.currentNodeId = state.tree.startNode;
   else {
     var previous = state.history[state.history.length - 1];

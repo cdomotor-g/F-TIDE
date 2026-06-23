@@ -385,7 +385,17 @@ export function buildReportHtml(meta) {
       + '</tr>';
   }).join('');
   var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td></tr>' : '';
-  var rationaleBlock = state.currentResult ? '<section class="box"><h2>Recommendation</h2><p><strong>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</strong></p><p>' + escapeHtml(state.currentResult.rationale || '') + '</p></section>' : '';
+  var riskScoreBlock = '';
+  if (state.currentResult && !state.currentResult.isMissingRule && state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length) {
+    var rScore = state.currentScore || 0;
+    var rBand = null;
+    for (var ri = 0; ri < state.tree.riskBands.length; ri++) {
+      var rb = state.tree.riskBands[ri];
+      if (typeof rb.max === 'undefined' || rScore <= rb.max) { rBand = rb; break; }
+    }
+    if (rBand) riskScoreBlock = '<p><strong>Delivery Risk Score:</strong> ' + rScore + ' — ' + escapeHtml(rBand.label) + '</p>';
+  }
+  var rationaleBlock = state.currentResult ? '<section class="box"><h2>Recommendation</h2><p><strong>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</strong></p><p>' + escapeHtml(state.currentResult.rationale || '') + '</p>' + riskScoreBlock + '</section>' : '';
   var treeTablesBlock = '<section class="box tree-snapshot"><h2>Current tree.json snapshot</h2><p class="tree-version"><strong>Tree version:</strong> ' + escapeHtml(state.tree.version || '-') + '</p><p class="tree-version"><strong>Version hash:</strong> ' + escapeHtml(state.tree.versionHash || '-') + '</p>' + buildTreeTablesHtml({ editable: false, headingLevel: 3 }) + '</section>';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8" />' +
     '<meta name="viewport" content="width=device-width, initial-scale=1.0" />' +

@@ -2,20 +2,28 @@
   "title": "FWIN-ONSM-Matrix",
   "version": "v45.2",
   "startNode": "AGE_TOWER",
+  "riskBands": [
+    { "max": 4, "label": "Low" },
+    { "max": 9, "label": "Medium" },
+    { "max": 15, "label": "High" },
+    { "label": "Critical" }
+  ],
   "nodes": {
     "AGE_TOWER": {
       "id": "AGE_TOWER",
-      "icon": "\u23f3",
+      "icon": "⏳",
       "note": "Entry point. Tower age screening.",
       "question": "How old is the tower and infrastructure?",
       "options": [
         {
           "label": "0-25 years",
-          "next": "WHS_RESULT"
+          "next": "WHS_RESULT",
+          "riskScore": 0
         },
         {
           "label": ">25 years",
-          "next": "RESULT_REBUILD_AGE"
+          "next": "RESULT_REBUILD_AGE",
+          "riskScore": 8
         }
       ],
       "x": 69.04,
@@ -23,25 +31,29 @@
     },
     "WHS_RESULT": {
       "id": "WHS_RESULT",
-      "icon": "\u26a0\ufe0f",
+      "icon": "⚠️",
       "note": "WHS evaluation branch.",
       "question": "What is the WHS risk evaluation result?",
       "options": [
         {
           "label": "None",
-          "next": "FOOTING_RAG_BOLTS"
+          "next": "FOOTING_RAG_BOLTS",
+          "riskScore": 0
         },
         {
           "label": "Minor",
-          "next": "FOOTING_RAG_BOLTS"
+          "next": "FOOTING_RAG_BOLTS",
+          "riskScore": 1
         },
         {
           "label": "Moderate",
-          "next": "WHS_MODERATE_ELIMINATION"
+          "next": "WHS_MODERATE_ELIMINATION",
+          "riskScore": 4
         },
         {
           "label": "Major",
-          "next": "WHS_MAJOR_ELIMINATION"
+          "next": "WHS_MAJOR_ELIMINATION",
+          "riskScore": 7
         }
       ],
       "x": 464.4,
@@ -49,17 +61,19 @@
     },
     "WHS_MAJOR_ELIMINATION": {
       "id": "WHS_MAJOR_ELIMINATION",
-      "icon": "\ud83d\udea7",
+      "icon": "🚧",
       "note": "Major WHS can/cannot be eliminated as part of remediation works without a full knockdown-rebuild.",
       "question": "Can the WHS risk be eliminated without a full knockdown-rebuild?",
       "options": [
         {
           "label": "Yes",
-          "next": "FOOTING_RAG_BOLTS"
+          "next": "FOOTING_RAG_BOLTS",
+          "riskScore": 0
         },
         {
           "label": "No",
-          "next": "RESULT_REBUILD_WHS_MAJOR"
+          "next": "RESULT_REBUILD_WHS_MAJOR",
+          "riskScore": 5
         }
       ],
       "x": 668.56,
@@ -67,17 +81,19 @@
     },
     "WHS_MODERATE_ELIMINATION": {
       "id": "WHS_MODERATE_ELIMINATION",
-      "icon": "\u26a0\ufe0f",
+      "icon": "⚠️",
       "note": "Moderate WHS can/cannot be reduced acceptably.",
       "question": "Can the WHS risk be reduced to an acceptable level through targeted remediation, other than a full knockdown-rebuild?",
       "options": [
         {
           "label": "Yes",
-          "next": "FOOTING_RAG_BOLTS"
+          "next": "FOOTING_RAG_BOLTS",
+          "riskScore": 0
         },
         {
           "label": "No",
-          "next": "RESULT_REBUILD_WHS_MODERATE"
+          "next": "RESULT_REBUILD_WHS_MODERATE",
+          "riskScore": 4
         }
       ],
       "x": 689.8,
@@ -85,21 +101,24 @@
     },
     "FOOTING_RAG_BOLTS": {
       "id": "FOOTING_RAG_BOLTS",
-      "icon": "\ud83d\udd29",
+      "icon": "🔩",
       "note": "Foundation / footing branch.",
       "question": "How many rag bolts are in the footing?",
       "options": [
         {
           "label": "4",
-          "next": "FLOOD_MAJOR_ZONE"
+          "next": "FLOOD_MAJOR_ZONE",
+          "riskScore": 5
         },
         {
           "label": "6 or more",
-          "next": "STRUCTURE_CONDITION"
+          "next": "STRUCTURE_CONDITION",
+          "riskScore": 0
         },
         {
           "label": "Unknown / not assessed",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 3
         }
       ],
       "x": 881,
@@ -107,16 +126,18 @@
     },
     "FLOOD_MAJOR_ZONE": {
       "id": "FLOOD_MAJOR_ZONE",
-      "icon": "\ud83c\udf0a",
+      "icon": "🌊",
       "question": "Is the station within a major flood zone?",
       "options": [
         {
           "label": "Yes",
-          "next": "RESULT_REBUILD_FLOOD_AND_FOOTING"
+          "next": "RESULT_REBUILD_FLOOD_AND_FOOTING",
+          "riskScore": 6
         },
         {
           "label": "No",
-          "next": "STRUCTURE_DRAWINGS"
+          "next": "STRUCTURE_DRAWINGS",
+          "riskScore": 0
         }
       ],
       "x": 1105.82,
@@ -124,25 +145,29 @@
     },
     "STRUCTURE_CONDITION": {
       "id": "STRUCTURE_CONDITION",
-      "icon": "\ud83c\udfd7\ufe0f",
+      "icon": "🏗️",
       "note": "Overall condition screening.",
       "question": "What is the current condition of the infrastructure?",
       "options": [
         {
           "label": "Good",
-          "next": "SENSOR_AGE"
+          "next": "SENSOR_AGE",
+          "riskScore": 0
         },
         {
           "label": "Fair",
-          "next": "SENSOR_AGE"
+          "next": "SENSOR_AGE",
+          "riskScore": 2
         },
         {
           "label": "Poor",
-          "next": "RESULT_REBUILD_STRUCTURE"
+          "next": "RESULT_REBUILD_STRUCTURE",
+          "riskScore": 6
         },
         {
           "label": "Unknown / not assessed",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 3
         }
       ],
       "x": 1138.27,
@@ -150,17 +175,19 @@
     },
     "STRUCTURE_DRAWINGS": {
       "id": "STRUCTURE_DRAWINGS",
-      "icon": "\ud83d\uddfa\ufe0f",
+      "icon": "🗺️",
       "note": "Structural record availability.",
       "question": "Are certified structural drawings available or attainable?",
       "options": [
         {
           "label": "Certified drawings",
-          "next": "SITE_FLOOD_STUDY"
+          "next": "SITE_FLOOD_STUDY",
+          "riskScore": 0
         },
         {
           "label": "No drawings",
-          "next": "RESULT_REBUILD_STRUCTURE"
+          "next": "RESULT_REBUILD_STRUCTURE",
+          "riskScore": 5
         }
       ],
       "links": [
@@ -174,17 +201,19 @@
     },
     "SENSOR_AGE": {
       "id": "SENSOR_AGE",
-      "icon": "\u2705",
+      "icon": "✅",
       "note": "Data quality screening.",
       "question": "Does the current infrastructure cause unacceptable degradation of data quality?",
       "options": [
         {
           "label": "Yes (change target to full knockdown rebuild)",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 4
         },
         {
           "label": "No",
-          "next": "ISSUE_PRIMARY_TYPE"
+          "next": "ISSUE_PRIMARY_TYPE",
+          "riskScore": 0
         }
       ],
       "x": 1573.87,
@@ -192,21 +221,24 @@
     },
     "ISSUE_PRIMARY_TYPE": {
       "id": "ISSUE_PRIMARY_TYPE",
-      "icon": "\ud83e\uddea",
+      "icon": "🧪",
       "note": "Distinguish equipment-only from structural issues.",
       "question": "Are site issue/s primarily sensor/equipment related rather than structural?",
       "options": [
         {
           "label": "Yes",
-          "next": "RESULT_SENSOR_UPGRADE"
+          "next": "RESULT_SENSOR_UPGRADE",
+          "riskScore": 0
         },
         {
           "label": "No",
-          "next": "SITE_CRITICALITY"
+          "next": "SITE_CRITICALITY",
+          "riskScore": 3
         },
         {
           "label": "Unknown / mixed",
-          "next": "SITE_CRITICALITY"
+          "next": "SITE_CRITICALITY",
+          "riskScore": 2
         }
       ],
       "x": 1887.74,
@@ -214,25 +246,29 @@
     },
     "SITE_CRITICALITY": {
       "id": "SITE_CRITICALITY",
-      "icon": "\ud83d\udccc",
+      "icon": "📌",
       "note": "Strategic importance of station to warning coverage. For example, forecast locations.",
       "question": "Is the site strategically critical for flood warning coverage?",
       "options": [
         {
           "label": "High criticality",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 6
         },
         {
           "label": "Medium criticality",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 4
         },
         {
           "label": "Low criticality",
-          "next": "SITE_ECONOMICS"
+          "next": "SITE_ECONOMICS",
+          "riskScore": 1
         },
         {
           "label": "Unknown / not assessed",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 3
         }
       ],
       "x": 2307.7,
@@ -240,21 +276,24 @@
     },
     "SITE_ECONOMICS": {
       "id": "SITE_ECONOMICS",
-      "icon": "\ud83d\udcb0",
+      "icon": "💰",
       "note": "Retention vs replacement/relocation branch for lower-criticality sites.",
       "question": "Is the station economical to retain compared with replacement or relocation?",
       "options": [
         {
           "label": "Yes",
-          "next": "CURRENT_MAINTENANCE"
+          "next": "CURRENT_MAINTENANCE",
+          "riskScore": 0
         },
         {
           "label": "No",
-          "next": "RESULT_DECOMMISSION_OR_RELOCATE"
+          "next": "RESULT_DECOMMISSION_OR_RELOCATE",
+          "riskScore": 2
         },
         {
           "label": "Unknown / not assessed",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 3
         }
       ],
       "x": 2725.68,
@@ -262,13 +301,14 @@
     },
     "SITE_FLOOD_STUDY": {
       "id": "SITE_FLOOD_STUDY",
-      "icon": "\ud83d\udcc4",
+      "icon": "📄",
       "note": "Flood study / geotech suitability branch.",
       "question": "Is there a flood study available for this site?",
       "options": [
         {
           "label": "Unknown / not assessed",
-          "next": "ENG_APPROVAL"
+          "next": "ENG_APPROVAL",
+          "riskScore": 2
         }
       ],
       "x": 1925.16,
@@ -280,18 +320,21 @@
       "options": [
         {
           "label": "HUB",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 0
         },
         {
           "label": "Contractor",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 1
         },
         {
           "label": "Council",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 2
         }
       ],
-      "icon": "\ud83d\udd27",
+      "icon": "🔧",
       "x": 3112.18,
       "y": 726.21
     },
@@ -301,10 +344,11 @@
       "options": [
         {
           "label": "ENG_APPROVAL",
-          "next": "RESULT_NO_RULE"
+          "next": "RESULT_NO_RULE",
+          "riskScore": 0
         }
       ],
-      "icon": "\u2705",
+      "icon": "✅",
       "x": 2309.05,
       "y": 257.72
     }
@@ -312,7 +356,7 @@
   "results": {
     "RESULT_REBUILD_AGE": {
       "id": "RESULT_REBUILD_AGE",
-      "icon": "\ud83c\udfd7\ufe0f",
+      "icon": "🏗️",
       "title": "Full knockdown-rebuild",
       "rationale": "Tower age exceeds the current threshold and is treated as an immediate rebuild trigger.",
       "x": 68.52,
@@ -320,7 +364,7 @@
     },
     "RESULT_REBUILD_WHS_MAJOR": {
       "id": "RESULT_REBUILD_WHS_MAJOR",
-      "icon": "\ud83d\udea8",
+      "icon": "🚨",
       "title": "Full knockdown-rebuild",
       "rationale": "A major WHS risk exists and cannot be eliminated without full replacement.",
       "x": 674.02,
@@ -328,7 +372,7 @@
     },
     "RESULT_REBUILD_WHS_MODERATE": {
       "id": "RESULT_REBUILD_WHS_MODERATE",
-      "icon": "\ud83d\udee0\ufe0f",
+      "icon": "🛠️",
       "title": "Full knockdown-rebuild",
       "rationale": "A moderate WHS risk cannot be reduced to an acceptable level through targeted remediation.",
       "x": 687.21,
@@ -336,7 +380,7 @@
     },
     "RESULT_REBUILD_FLOOD_AND_FOOTING": {
       "id": "RESULT_REBUILD_FLOOD_AND_FOOTING",
-      "icon": "\ud83c\udf0a",
+      "icon": "🌊",
       "title": "Full knockdown-rebuild",
       "rationale": "The footing configuration is inadequate and the site is within a major flood zone.",
       "x": 1108.71,
@@ -344,7 +388,7 @@
     },
     "RESULT_REBUILD_STRUCTURE": {
       "id": "RESULT_REBUILD_STRUCTURE",
-      "icon": "\ud83c\udfda\ufe0f",
+      "icon": "🏚️",
       "title": "Full knockdown-rebuild",
       "rationale": "Poor condition or lack of structural drawings is treated as a fatal structural uncertainty.",
       "x": 1283.44,
@@ -352,7 +396,7 @@
     },
     "RESULT_SENSOR_UPGRADE": {
       "id": "RESULT_SENSOR_UPGRADE",
-      "icon": "\ud83d\udef0\ufe0f",
+      "icon": "🛸",
       "title": "Sensor / equipment upgrade",
       "rationale": "The primary issue appears to be equipment age or reliability rather than tower structure.",
       "x": 1881.9,
@@ -360,7 +404,7 @@
     },
     "RESULT_DECOMMISSION_OR_RELOCATE": {
       "id": "RESULT_DECOMMISSION_OR_RELOCATE",
-      "icon": "\ud83d\ude9a",
+      "icon": "🚚",
       "title": "Consider decommissioning or relocation",
       "rationale": "For lower-criticality sites, retention may not be justified if the station is uneconomical to keep.",
       "x": 2729.81,
@@ -368,7 +412,7 @@
     },
     "RESULT_NO_RULE": {
       "id": "RESULT_NO_RULE",
-      "icon": "\u2753",
+      "icon": "❓",
       "title": "No current recommendation",
       "rationale": "This scenario is not yet covered by the current decision tree. Record the case and add a new rule later.",
       "isMissingRule": true,
