@@ -1,0 +1,2 @@
+window.BUILD_TIMESTAMP = "2026-06-23T11:15:20Z";
+window.BUILD_COMMIT = "34ca75f";

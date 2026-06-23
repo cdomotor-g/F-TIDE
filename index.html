@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>FWIN-TIDE</title>
+  <title>FWIN-ONSM-Matrix</title>
   <link rel="icon" type="image/svg+xml" href="tower.svg" />
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -12,8 +12,8 @@
     <div class="header">
       <img src="tower.svg" class="header-tower" alt="" aria-hidden="true" />
       <div class="header-copy">
-        <h1>FWIN-TIDE</h1>
-        <p>Tower Infrastructure Decision Engine</p>
+        <h1>FWIN-ONSM-Matrix</h1>
+        <p id="buildId" class="build-id"></p>
       </div>
     </div>
     <div class="grid">
@@ -23,8 +23,6 @@
             <label class="file-label" for="jsonFileInput">Load tree.json</label>
             <input class="file-input" id="jsonFileInput" type="file" accept=".json,application/json" />
             <button class="btn" id="saveTreeBtn" type="button" disabled>Save tree.json</button>
-            <button class="btn" id="forkTreeBtn" type="button" disabled>Fork branch</button>
-            <button class="btn" id="saveSessionBtn" type="button" disabled>Save session</button>
             <button class="btn" id="showSchemaBtn" type="button">Show tree schema</button>
               <div id="schemaModalOverlay" class="modal-overlay hidden">
                 <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="schemaModalTitle">
@@ -40,23 +38,28 @@
           <span id="loadStatus">No tree loaded yet.</span>
           <span class="pill" id="toolVersion">Rule set: -</span>
         </div>
-        <div id="assessmentMetaCard" class="card hidden">
-          <p class="card-title">Assessment details</p>
+        <div id="sessionMetaCard" class="card hidden">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Session details</p>
+            <button class="btn-small" id="newSessionIdBtn" type="button">New</button>
+            <button class="btn-small" id="clearSessionMetaBtn" type="button">Clear</button>
+            <button class="btn-small" id="sessionsBtn" type="button">Sessions</button>
+          </div>
           <div class="meta-grid">
             <div class="meta-field"><label for="assessorInitialsInput">Assessor initials</label><input id="assessorInitialsInput" class="input" type="text" maxlength="20" placeholder="e.g. HS,AS,DW,RD,RH" /></div>
             <div class="meta-field"><label for="stationNumberInput">Station number</label><input id="stationNumberInput" class="input" type="text" maxlength="50" placeholder="e.g. 123456A" /></div>
             <div class="meta-field"><label for="stationNameInput">Station name</label><input id="stationNameInput" class="input" type="text" maxlength="120" placeholder="e.g. Burnett at XYZ" /></div>
-            <div class="meta-field"><label for="assessmentIdInput">Assessment ID</label><input id="assessmentIdInput" class="input" type="text" readonly /></div>
-            <div class="meta-field"><label for="supersedesAssessmentInput">Supersedes assessment</label><input id="supersedesAssessmentInput" class="input" type="text" list="previousAssessmentIds" placeholder="Optional previous assessment ID or type new one" /></div>
+            <div class="meta-field"><label for="sessionIdInput">Session ID</label><input id="sessionIdInput" class="input" type="text" readonly /></div>
+            <div class="meta-field"><label for="supersedesSessionInput">Supersedes session</label><input id="supersedesSessionInput" class="input" type="text" list="previousSessionIds" placeholder="Optional previous session ID or type new one" /></div>
           </div>
-          <datalist id="previousAssessmentIds"></datalist>
+          <datalist id="previousSessionIds"></datalist>
         </div>
         <div class="notice" id="startupNotice">Start by loading <span class="inline-code">tree.json</span>. Original tree format still works unchanged. Optional fields: <span class="inline-code">icon</span> and <span class="inline-code">links</span>.</div>
         <div id="questionView" class="card hidden">
           <div class="card-header">
             <p class="card-title" style="margin:0;">Question</p>
             <div class="question-actions">
-              <button class="btn" id="restartBtn" type="button">⟲ Restart assessment</button>
+              <button class="btn" id="restartBtn" type="button">⟲ Restart</button>
               <button class="btn" id="backBtn" type="button">← Back one step</button>
             </div>
           </div>
@@ -79,7 +82,7 @@
           <div class="card-header">
             <p class="card-title" style="margin:0;">Outcome</p>
             <div class="result-actions">
-              <button class="btn" id="restartResultBtn" type="button">⟲ Restart assessment</button>
+              <button class="btn" id="restartResultBtn" type="button">⟲ Restart</button>
               <button class="btn" id="backResultBtn" type="button">← Back one step</button>
             </div>
           </div>
@@ -91,11 +94,18 @@
             <p class="result-title">Recommendation</p>
             <p class="result-recommendation" id="resultRecommendation"></p>
             <p class="result-rationale" id="resultRationale"></p>
+            <div id="riskScoreWrap" class="risk-score-wrap hidden">
+              <p class="result-title" style="margin-top:16px;">Delivery Risk Score</p>
+              <div class="risk-score-row">
+                <span id="riskScoreNumber" class="risk-score-number">0</span>
+                <span id="riskScoreBand" class="risk-band-pill">-</span>
+              </div>
+            </div>
           </div>
           <div id="missingRuleBox" class="missing-box hidden">
             <p style="margin-top:0;"><strong>No current recommendation exists for this scenario.</strong></p>
             <p class="footnote" style="margin-top:0;">Missing Rule means this path currently lands on a placeholder result instead of a final recommendation.</p>
-            <p class="footnote" style="margin-top:0;">If you apply an existing result below, that branch will immediately use it in this tree and future assessments will return that result after you save tree.json.</p>
+            <p class="footnote" style="margin-top:0;">If you apply an existing result below, that branch will immediately use it in this tree and future sessions will return that result after you save tree.json.</p>
             <label for="missingRuleSelect">Select the recommendation that should apply</label>
             <select id="missingRuleSelect" class="select-input"></select>
             <label for="missingRuleText" style="margin-top:10px;">Notes (optional)</label>
@@ -131,7 +141,7 @@
         <div class="card">
           <div class="card-header">
             <p class="card-title" style="margin:0;">Decision path</p>
-            <div class="path-actions"><button class="btn-small" id="exportAssessmentBtn" type="button">Export assessment</button></div>
+            <div class="path-actions"><button class="btn-small" id="exportReportBtn" type="button">Export report</button></div>
           </div>
           <div class="path-table-wrap">
             <table class="path-table">
@@ -227,6 +237,23 @@
     </div>
   </div>
 
+  <div id="sessionsModalOverlay" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="sessionsModalTitle">
+      <div class="modal-header">
+        <h2 id="sessionsModalTitle" style="margin:0;">Sessions</h2>
+        <button class="btn-small" id="closeSessionsBtn" type="button">Close</button>
+      </div>
+      <div class="sessions-toolbar">
+        <button class="btn" id="saveSessionModalBtn" type="button">Save current session</button>
+        <label class="btn" for="importSessionsInput">Import sessions.json</label>
+        <input class="file-input" id="importSessionsInput" type="file" accept=".json,application/json" />
+        <button class="btn" id="exportSessionsBtn" type="button">Export sessions.json</button>
+      </div>
+      <p id="sessionsModalMessage" class="footnote" style="min-height:1.4em; margin: 4px 0 12px;"></p>
+      <div id="sessionsListContainer"></div>
+    </div>
+  </div>
+
   <div id="validationWarningOverlay" class="modal-overlay hidden">
     <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="validationWarningTitle">
       <div class="modal-header"><h2 id="validationWarningTitle" style="margin:0;">Validation warnings</h2><button class="btn-small" id="validationWarningCancelBtn" type="button">Cancel</button></div>
@@ -240,6 +267,7 @@
   </div>
   <script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
   <script src="report.js"></script>
-  <script src="app.js"></script>
+  <script src="build-info.js"></script>
+  <script src="app.bundle.js"></script>
 </body>
 </html>
