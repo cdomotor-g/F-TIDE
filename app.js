@@ -145,10 +145,15 @@ async function openSchemaModal() {
   try {
     var readmeResp = await fetch('README.md?' + Date.now());
     if (els.readmeText) {
-      els.readmeText.textContent = readmeResp.ok ? await readmeResp.text() : '// README.md not found';
+      if (readmeResp.ok) {
+        var md = await readmeResp.text();
+        els.readmeText.innerHTML = (typeof marked !== 'undefined') ? marked.parse(md) : '<pre>' + md + '</pre>';
+      } else {
+        els.readmeText.textContent = 'README.md not found';
+      }
     }
   } catch (err) {
-    if (els.readmeText) els.readmeText.textContent = '// Could not load README.md';
+    if (els.readmeText) els.readmeText.textContent = 'Could not load README.md';
   }
   try {
     var resp = await fetch('tree_schema.json?' + Date.now());

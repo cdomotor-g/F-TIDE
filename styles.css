@@ -542,6 +542,46 @@ details summary::-webkit-details-marker { display: none; }
 #editorModal.modal-dirty .editor-subpanel {
   border-color: rgba(251, 191, 36, 0.65);
 }
+
+/* Rendered README markdown */
+.readme-render {
+  font-size: 13.5px; line-height: 1.65; color: #cbd5e1;
+  background: #172234; border-radius: 10px; padding: 18px 22px;
+  margin: 0 0 18px 0; overflow-x: auto;
+}
+.readme-render h1, .readme-render h2, .readme-render h3 {
+  color: #e2e8f0; margin: 1.2em 0 0.4em 0; font-weight: 600;
+}
+.readme-render h1 { font-size: 1.25em; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+.readme-render h2 { font-size: 1.1em; border-bottom: 1px solid rgba(71,85,111,0.35); padding-bottom: 0.2em; }
+.readme-render h3 { font-size: 1em; }
+.readme-render p { margin: 0.5em 0; }
+.readme-render a { color: #818cf8; text-decoration: underline; }
+.readme-render a:hover { color: #a5b4fc; }
+.readme-render code {
+  font-family: Consolas, Menlo, Monaco, monospace; font-size: 12px;
+  background: rgba(99,102,241,0.12); color: #c7d2fe;
+  padding: 1px 5px; border-radius: 5px;
+}
+.readme-render pre {
+  background: #0f1727; border-radius: 8px; padding: 12px 14px;
+  overflow-x: auto; margin: 0.8em 0;
+}
+.readme-render pre code { background: none; padding: 0; color: #a5f3fc; }
+.readme-render table {
+  border-collapse: collapse; width: 100%; margin: 0.8em 0; font-size: 12.5px;
+}
+.readme-render th, .readme-render td {
+  border: 1px solid var(--border); padding: 6px 10px; text-align: left;
+}
+.readme-render th { background: rgba(99,102,241,0.1); color: #e2e8f0; }
+.readme-render ul, .readme-render ol { margin: 0.4em 0; padding-left: 1.6em; }
+.readme-render li { margin: 0.2em 0; }
+.readme-render hr { border: none; border-top: 1px solid var(--border); margin: 1em 0; }
+.readme-render blockquote {
+  border-left: 3px solid rgba(99,102,241,0.5); margin: 0.6em 0;
+  padding: 4px 12px; color: #94a3b8;
+}
 #editorModal .editor-subpanel.editor-subpanel-dirty {
   background: linear-gradient(180deg, rgba(69, 33, 20, 0.92), rgba(25, 18, 16, 0.94));
   border-color: rgba(251, 191, 36, 0.92);

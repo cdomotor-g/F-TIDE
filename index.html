@@ -30,7 +30,7 @@
         <div id="schemaModalOverlay" class="modal-overlay hidden">
           <div class="modal" style="max-width: 720px;" role="dialog" aria-modal="true" aria-labelledby="schemaModalTitle">
             <div class="modal-header"><h2 id="schemaModalTitle" style="margin:0;">Help</h2><button class="btn-small" id="closeSchemaBtn" type="button">Close</button></div>
-            <pre id="readmeText" style="font-size:13px; color:#cbd5e1; line-height:1.6; background:#172234; border-radius:10px; padding:18px; margin:0 0 18px 0; overflow-x:auto; white-space:pre-wrap; word-break:break-word;"></pre>
+            <div id="readmeText" class="readme-render"></div>
             <h3 style="margin:0 0 10px 0; font-size:13px; text-transform:uppercase; letter-spacing:.07em; color:var(--muted);">tree.json schema</h3>
             <pre id="treeSchemaText" style="font-size:13px; color:#cbd5e1; line-height:1.5; background:#172234; border-radius:10px; padding:18px; margin:0; overflow-x:auto;"></pre>
           </div>
@@ -285,6 +285,7 @@
   </div>
   <script src="bg-animation.js"></script>
   <script src="https://unpkg.com/cytoscape@3.27.0/dist/cytoscape.min.js"></script>
+  <script src="https://unpkg.com/marked@9.1.6/marked.min.js"></script>
   <script src="report.js"></script>
   <script src="build-info.js"></script>
   <script src="app.bundle.js"></script>
