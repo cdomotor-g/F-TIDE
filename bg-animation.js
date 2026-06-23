@@ -54,7 +54,7 @@
     filaments.push({
       x: x != null ? x : rnd(0.05, 0.95) * W,
       y: y != null ? y : rnd(0.05, 0.95) * H,
-      angle: angle != null ? angle : rnd(0, Math.PI * 2),
+      angle: angle != null ? angle : rnd(0, Math.PI * 4),
       angleVel: 0,
       speed: rnd(0.56, 1.24),
       opacity: 0,
@@ -76,7 +76,7 @@
     nodes.push({
       x: x,
       y: y,
-      radius: rnd(0.3, 1.0),
+      radius: rnd(0.3, 0.9),
       opacity: 0,
       life: 0,
       totalLife: Math.floor(rnd(350, 750)),
@@ -111,7 +111,7 @@
       // Smooth random-walk angle change
       f.angleVel += (Math.random() - 0.5) * 0.0075;
       f.angleVel = clamp(f.angleVel, -0.024, 0.024);
-      f.angleVel *= 0.965; // gentle damping keeps curves soft
+      f.angleVel *= 2
       f.angle += f.angleVel;
 
       f.px = f.x;
@@ -133,10 +133,10 @@
       if (!f.branched && f.life >= f.branchAge) {
         f.branched = true;
         spawnNode(f.x, f.y);
-        var numChildren = Math.random() < 0.6 ? 4 : 1;
+        var numChildren = Math.random() < 0.7 ? 4 : 1;
         for (var c = 0; c < numChildren; c++) {
           if (filaments.length < MAX_FILAMENTS + 4) {
-            var dev = rnd(0.18, 0.68) * (Math.random() < 0.5 ? 1 : -1);
+            var dev = rnd(0.18, 0.68) * (Math.random() < 0.7 ? 1 : -1);
             spawnFilament(f.x, f.y, f.angle + dev, f.maxOpacity);
           }
         }
