@@ -297,6 +297,8 @@ details summary::-webkit-details-marker { display: none; }
 #editorModalOverlay { z-index: 31; }
 /* Ensure icon picker appears above the editor modal */
 #iconPickerOverlay { z-index: 41; }
+/* Ensure validation warning modal appears above all other overlays */
+#validationWarningOverlay { z-index: 51; }
 
 .tables-modal {
   width: calc(100vw - 48px);

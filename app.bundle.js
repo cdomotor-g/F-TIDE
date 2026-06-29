@@ -2131,10 +2131,11 @@ function finalizeAppliedPayloadEdit(edited, saveAfter, warnings) {
   if (saveAfter) saveTreeJson();
 }
 
-function finalizeCreatedPayload(created, warnings) {
-  if (state.createMode === 'node') state.tree.nodes[created.id] = created; else state.tree.results[created.id] = created;
-  appendChangeLog({ type: 'payloadCreated', payloadType: state.createMode, payloadId: created.id });
-  els.createPayloadMessage.textContent = (state.createMode === 'node' ? 'Question node ' : 'Result node ') + created.id + ' created.' + (warnings && warnings.length ? ' ' + formatTreeValidationWarningSummary(state.tree) : '');
+function finalizeCreatedPayload(created, warnings, createMode) {
+  var mode = createMode || state.createMode;
+  if (mode === 'node') state.tree.nodes[created.id] = created; else state.tree.results[created.id] = created;
+  appendChangeLog({ type: 'payloadCreated', payloadType: mode, payloadId: created.id });
+  els.createPayloadMessage.textContent = (mode === 'node' ? 'Question node ' : 'Result node ') + created.id + ' created.' + (warnings && warnings.length ? ' ' + formatTreeValidationWarningSummary(state.tree) : '');
   els.createPayloadMessage.className = 'footnote good';
   state.createDraft = buildCreateDraft(state.createMode);
   state.createDraftBaseline = clone(state.createDraft);
@@ -2295,7 +2296,8 @@ function createPayloadFromDraft() {
     if (errors.length) throw new Error(errors[0]);
     var previewTree = getPreviewTreeForPayload('create', state.createMode, created);
     var warnings = uniqueStrings(getPayloadValidationWarnings(created, state.createMode, true).concat(getTreeValidationWarnings(previewTree)));
-    var proceed = function () { finalizeCreatedPayload(created, warnings); };
+    var capturedCreateMode = state.createMode;
+    var proceed = function () { finalizeCreatedPayload(created, warnings, capturedCreateMode); };
     if (warnings.length) {
       openValidationWarningModal({ title: 'Create payload with warnings?', message: 'This new payload may break the tree. You can cancel and fix it first, or proceed anyway.', warnings: warnings, onProceed: proceed });
       return;
