@@ -253,13 +253,29 @@ export function renderOptionTargetRows(node) {
     button.addEventListener('click', function () { selectOption(node, option); });
     var target = document.createElement('div');
     target.className = 'target-cell';
+    var nextId = String(option.next || '').trim();
+    var targetNode = state.tree.nodes[nextId];
+    var targetResult = state.tree.results[nextId];
+    var targetPayload = targetNode || targetResult;
+    if (targetPayload) {
+      var nameRow = document.createElement('div');
+      nameRow.className = 'target-name';
+      var icon = document.createElement('span');
+      icon.className = 'target-icon';
+      icon.textContent = getIcon(targetPayload);
+      var name = document.createElement('span');
+      name.className = 'target-name-text';
+      name.textContent = targetNode ? targetNode.question : (targetResult.title || targetResult.id);
+      nameRow.appendChild(icon);
+      nameRow.appendChild(name);
+      target.appendChild(nameRow);
+    }
     var id = document.createElement('div');
     id.className = 'target-id';
     id.textContent = option.next || '—';
     var meta = document.createElement('div');
     meta.className = 'target-meta';
-    var nextId = String(option.next || '').trim();
-    meta.textContent = state.tree.nodes[nextId] ? 'Question node' : (state.tree.results[nextId] ? 'Result' : (nextId ? 'Unknown' : 'Not linked yet'));
+    meta.textContent = targetNode ? 'Question node' : (targetResult ? 'Result' : (nextId ? 'Unknown' : 'Not linked yet'));
     target.appendChild(id);
     target.appendChild(meta);
     if (hasRiskBands && typeof option.riskScore === 'number') {
