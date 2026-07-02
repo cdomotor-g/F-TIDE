@@ -399,7 +399,9 @@ export function buildOptionRow(scope, option, index, total) {
     '<div class="editor-field"><label>Label</label><input data-scope="' + scope + '" data-option-field="label" data-index="' + index + '" type="text" value="' + escapeAttr(option && option.label || '') + '" /></div>' +
     '<div class="editor-field"><label>Next target</label>' + buildTargetSelect(scope, index, option && option.next || '') + '<div class="editor-help">Question nodes and results are both listed. Leave unset to wire it up later in the tree map (right-click the node).</div></div>' +
     '<div class="editor-field"><label>Risk score</label><input data-scope="' + scope + '" data-option-field="riskScore" data-index="' + index + '" type="number" step="1" value="' + escapeAttr(riskScore) + '" placeholder="0" /><div class="editor-help">Points added to cumulative risk when this answer is chosen.</div></div>' +
-    '</div></div>';
+    '</div>' +
+    '<div class="editor-field"><label>Recommendation</label><textarea data-scope="' + scope + '" data-option-field="recommendation" data-index="' + index + '" placeholder="Optional. Shown on the question card and in the export report when this option is present.">' + escapeHtml(option && option.recommendation || '') + '</textarea></div>' +
+    '</div>';
 }
 
 export function buildTargetSelect(scope, index, value) {
@@ -493,7 +495,7 @@ export function syncScopeDraftFromForm(scope) {
     var optionMap = {};
     Array.prototype.forEach.call(root.querySelectorAll('[data-option-field]'), function (el) {
       var idx = Number(el.getAttribute('data-index'));
-      if (!optionMap[idx]) optionMap[idx] = { label: '', next: '', riskScore: '' };
+      if (!optionMap[idx]) optionMap[idx] = { label: '', next: '', riskScore: '', recommendation: '' };
       optionMap[idx][el.getAttribute('data-option-field')] = el.value;
     });
     Object.keys(optionMap).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (key) {
@@ -502,6 +504,8 @@ export function syncScopeDraftFromForm(scope) {
       if (entry.riskScore !== '' && entry.riskScore !== undefined && !isNaN(Number(entry.riskScore))) {
         opt.riskScore = Number(entry.riskScore);
       }
+      var recommendation = String(entry.recommendation || '').trim();
+      if (recommendation) opt.recommendation = recommendation;
       payload.options.push(opt);
     });
   } else {

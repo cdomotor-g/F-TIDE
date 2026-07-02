@@ -762,7 +762,7 @@ export function buildTreeTablesHtml(options) {
   });
   html += '</tbody></table></div>';
   html += '<div class="table-section"><' + headingTag + '>Decision Paths (Node &rarr; Next Node)</' + headingTag + '>';
-  html += '<table><thead><tr><th>From Node</th><th>Option Label</th><th>To Node</th><th>Risk Score</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th>From Node</th><th>Option Label</th><th>To Node</th><th>Risk Score</th><th>Recommendation</th></tr></thead><tbody>';
   Object.keys(state.tree.nodes).forEach(function (id) {
     var node = state.tree.nodes[id];
     node.options.forEach(function (option) {
@@ -772,6 +772,7 @@ export function buildTreeTablesHtml(options) {
       html += '<td>' + escapeHtml(option.label || '(unlabeled)') + '</td>';
       html += '<td>' + escapeHtml(option.next || '') + '</td>';
       html += '<td class="table-risk-score">' + escapeHtml(rs) + '</td>';
+      html += '<td>' + escapeHtml(option.recommendation || '') + '</td>';
       html += '</tr>';
     });
   });

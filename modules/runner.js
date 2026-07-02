@@ -271,6 +271,20 @@ export function renderOptionTargetRows(node) {
     row.appendChild(button);
     row.appendChild(target);
     els.optionTargetGrid.appendChild(row);
+    var recommendation = String(option.recommendation || '').trim();
+    if (recommendation) {
+      var recRow = document.createElement('div');
+      recRow.className = 'option-recommendation-row';
+      var recLabel = document.createElement('span');
+      recLabel.className = 'option-recommendation-label';
+      recLabel.textContent = 'Recommendation for "' + option.label + '":';
+      var recText = document.createElement('span');
+      recText.className = 'option-recommendation-text';
+      recText.textContent = recommendation;
+      recRow.appendChild(recLabel);
+      recRow.appendChild(recText);
+      els.optionTargetGrid.appendChild(recRow);
+    }
   });
 }
 
@@ -289,6 +303,7 @@ export function renderPathTable(result) {
     var text = document.createElement('div'); text.textContent = step.question;
     wrap.appendChild(icon); wrap.appendChild(text); tdQuestion.appendChild(wrap);
     var tdAnswer = document.createElement('td'); tdAnswer.textContent = step.answer;
+    var tdRecommendation = document.createElement('td'); tdRecommendation.textContent = step.recommendation || '';
     var tdComment = document.createElement('td'); tdComment.textContent = step.comment || '';
     var tdScore = document.createElement('td'); tdScore.className = 'score-col';
     if (hasRiskBands) {
@@ -302,7 +317,7 @@ export function renderPathTable(result) {
       tdScore.appendChild(document.createElement('br'));
       tdScore.appendChild(totalSpan);
     }
-    tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdComment); tr.appendChild(tdScore);
+    tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdRecommendation); tr.appendChild(tdComment); tr.appendChild(tdScore);
     els.pathTableBody.appendChild(tr);
   });
   if (result) {
@@ -311,9 +326,10 @@ export function renderPathTable(result) {
     var b = document.createElement('td'); b.textContent = 'Outcome';
     var c = document.createElement('td'); c.textContent = result.title || 'Recommendation unavailable';
     var d = document.createElement('td');
+    var f = document.createElement('td');
     var e = document.createElement('td'); e.className = 'score-col';
     if (hasRiskBands) { e.textContent = String(state.currentScore || 0); }
-    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tr.appendChild(d); tr.appendChild(e);
+    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tr.appendChild(d); tr.appendChild(f); tr.appendChild(e);
     els.pathTableBody.appendChild(tr);
   }
 }
@@ -354,7 +370,8 @@ export function selectOption(node, option) {
     next: option.next,
     icon: getIcon(node),
     comment: state.comments[node.id] || '',
-    riskScore: score
+    riskScore: score,
+    recommendation: String(option.recommendation || '').trim()
   });
   if (state.tree.nodes[option.next]) { state.currentNodeId = option.next; renderNode(); return; }
   if (state.tree.results[option.next]) { renderResult(state.tree.results[option.next]); return; }
@@ -474,7 +491,7 @@ export function saveMissingRuleCase() {
     treeVersion: state.tree ? (state.tree.version || '') : '',
     treeVersionHash: state.tree ? (state.tree.versionHash || '') : '',
     branchId: state.tree ? (state.tree.branchId || 'main') : 'main',
-    path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon }; }),
+    path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon, recommendation: step.recommendation || '' }; }),
     selectedResultId: els.missingRuleSelect.value || null,
     proposedRecommendation: note
   };

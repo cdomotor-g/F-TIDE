@@ -637,6 +637,20 @@ function renderOptionTargetRows(node) {
     row.appendChild(button);
     row.appendChild(target);
     els.optionTargetGrid.appendChild(row);
+    var recommendation = String(option.recommendation || '').trim();
+    if (recommendation) {
+      var recRow = document.createElement('div');
+      recRow.className = 'option-recommendation-row';
+      var recLabel = document.createElement('span');
+      recLabel.className = 'option-recommendation-label';
+      recLabel.textContent = 'Recommendation for "' + option.label + '":';
+      var recText = document.createElement('span');
+      recText.className = 'option-recommendation-text';
+      recText.textContent = recommendation;
+      recRow.appendChild(recLabel);
+      recRow.appendChild(recText);
+      els.optionTargetGrid.appendChild(recRow);
+    }
   });
 }
 
@@ -655,6 +669,7 @@ function renderPathTable(result) {
     var text = document.createElement('div'); text.textContent = step.question;
     wrap.appendChild(icon); wrap.appendChild(text); tdQuestion.appendChild(wrap);
     var tdAnswer = document.createElement('td'); tdAnswer.textContent = step.answer;
+    var tdRecommendation = document.createElement('td'); tdRecommendation.textContent = step.recommendation || '';
     var tdComment = document.createElement('td'); tdComment.textContent = step.comment || '';
     var tdScore = document.createElement('td'); tdScore.className = 'score-col';
     if (hasRiskBands) {
@@ -668,7 +683,7 @@ function renderPathTable(result) {
       tdScore.appendChild(document.createElement('br'));
       tdScore.appendChild(totalSpan);
     }
-    tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdComment); tr.appendChild(tdScore);
+    tr.appendChild(tdIndex); tr.appendChild(tdQuestion); tr.appendChild(tdAnswer); tr.appendChild(tdRecommendation); tr.appendChild(tdComment); tr.appendChild(tdScore);
     els.pathTableBody.appendChild(tr);
   });
   if (result) {
@@ -677,9 +692,10 @@ function renderPathTable(result) {
     var b = document.createElement('td'); b.textContent = 'Outcome';
     var c = document.createElement('td'); c.textContent = result.title || 'Recommendation unavailable';
     var d = document.createElement('td');
+    var f = document.createElement('td');
     var e = document.createElement('td'); e.className = 'score-col';
     if (hasRiskBands) { e.textContent = String(state.currentScore || 0); }
-    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tr.appendChild(d); tr.appendChild(e);
+    tr.appendChild(a); tr.appendChild(b); tr.appendChild(c); tr.appendChild(d); tr.appendChild(f); tr.appendChild(e);
     els.pathTableBody.appendChild(tr);
   }
 }
@@ -720,7 +736,8 @@ function selectOption(node, option) {
     next: option.next,
     icon: getIcon(node),
     comment: state.comments[node.id] || '',
-    riskScore: score
+    riskScore: score,
+    recommendation: String(option.recommendation || '').trim()
   });
   if (state.tree.nodes[option.next]) { state.currentNodeId = option.next; renderNode(); return; }
   if (state.tree.results[option.next]) { renderResult(state.tree.results[option.next]); return; }
@@ -840,7 +857,7 @@ function saveMissingRuleCase() {
     treeVersion: state.tree ? (state.tree.version || '') : '',
     treeVersionHash: state.tree ? (state.tree.versionHash || '') : '',
     branchId: state.tree ? (state.tree.branchId || 'main') : 'main',
-    path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon }; }),
+    path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon, recommendation: step.recommendation || '' }; }),
     selectedResultId: els.missingRuleSelect.value || null,
     proposedRecommendation: note
   };
@@ -1633,7 +1650,7 @@ function buildTreeTablesHtml(options) {
   });
   html += '</tbody></table></div>';
   html += '<div class="table-section"><' + headingTag + '>Decision Paths (Node &rarr; Next Node)</' + headingTag + '>';
-  html += '<table><thead><tr><th>From Node</th><th>Option Label</th><th>To Node</th><th>Risk Score</th></tr></thead><tbody>';
+  html += '<table><thead><tr><th>From Node</th><th>Option Label</th><th>To Node</th><th>Risk Score</th><th>Recommendation</th></tr></thead><tbody>';
   Object.keys(state.tree.nodes).forEach(function (id) {
     var node = state.tree.nodes[id];
     node.options.forEach(function (option) {
@@ -1643,6 +1660,7 @@ function buildTreeTablesHtml(options) {
       html += '<td>' + escapeHtml(option.label || '(unlabeled)') + '</td>';
       html += '<td>' + escapeHtml(option.next || '') + '</td>';
       html += '<td class="table-risk-score">' + escapeHtml(rs) + '</td>';
+      html += '<td>' + escapeHtml(option.recommendation || '') + '</td>';
       html += '</tr>';
     });
   });
@@ -2054,7 +2072,9 @@ function buildOptionRow(scope, option, index, total) {
     '<div class="editor-field"><label>Label</label><input data-scope="' + scope + '" data-option-field="label" data-index="' + index + '" type="text" value="' + escapeAttr(option && option.label || '') + '" /></div>' +
     '<div class="editor-field"><label>Next target</label>' + buildTargetSelect(scope, index, option && option.next || '') + '<div class="editor-help">Question nodes and results are both listed. Leave unset to wire it up later in the tree map (right-click the node).</div></div>' +
     '<div class="editor-field"><label>Risk score</label><input data-scope="' + scope + '" data-option-field="riskScore" data-index="' + index + '" type="number" step="1" value="' + escapeAttr(riskScore) + '" placeholder="0" /><div class="editor-help">Points added to cumulative risk when this answer is chosen.</div></div>' +
-    '</div></div>';
+    '</div>' +
+    '<div class="editor-field"><label>Recommendation</label><textarea data-scope="' + scope + '" data-option-field="recommendation" data-index="' + index + '" placeholder="Optional. Shown on the question card and in the export report when this option is present.">' + escapeHtml(option && option.recommendation || '') + '</textarea></div>' +
+    '</div>';
 }
 
 function buildTargetSelect(scope, index, value) {
@@ -2148,7 +2168,7 @@ function syncScopeDraftFromForm(scope) {
     var optionMap = {};
     Array.prototype.forEach.call(root.querySelectorAll('[data-option-field]'), function (el) {
       var idx = Number(el.getAttribute('data-index'));
-      if (!optionMap[idx]) optionMap[idx] = { label: '', next: '', riskScore: '' };
+      if (!optionMap[idx]) optionMap[idx] = { label: '', next: '', riskScore: '', recommendation: '' };
       optionMap[idx][el.getAttribute('data-option-field')] = el.value;
     });
     Object.keys(optionMap).sort(function (a, b) { return Number(a) - Number(b); }).forEach(function (key) {
@@ -2157,6 +2177,8 @@ function syncScopeDraftFromForm(scope) {
       if (entry.riskScore !== '' && entry.riskScore !== undefined && !isNaN(Number(entry.riskScore))) {
         opt.riskScore = Number(entry.riskScore);
       }
+      var recommendation = String(entry.recommendation || '').trim();
+      if (recommendation) opt.recommendation = recommendation;
       payload.options.push(opt);
     });
   } else {
@@ -3024,10 +3046,11 @@ function buildReportHtml(meta) {
     return '<tr><td>' + (index + 1) + '</td>'
       + '<td><span class="icon">' + escapeHtml(step.icon || DEFAULT_ICON) + '</span> ' + escapeHtml(step.question) + '</td>'
       + '<td>' + answerHtml + '</td>'
+      + '<td>' + escapeHtml(step.recommendation || '') + '</td>'
       + '<td>' + escapeHtml(step.comment || '') + '</td>'
       + '</tr>';
   }).join('');
-  var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td></tr>' : '';
+  var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td><td></td></tr>' : '';
   var riskScoreBlock = '';
   if (state.currentResult && !state.currentResult.isMissingRule && state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length) {
     var rScore = state.currentScore || 0;
@@ -3054,7 +3077,7 @@ function buildReportHtml(meta) {
     '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
     '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
     '</div></section>' +
-    '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
+    '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Recommendation</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
     rationaleBlock + treeTablesBlock + '<p class="foot">Open this report in a browser and print to PDF.</p>' + '</body></html>';
 }
 

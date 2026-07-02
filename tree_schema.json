@@ -125,6 +125,10 @@
         "riskScore": {
           "type": "number",
           "description": "Points added to the cumulative delivery risk score when this answer is chosen"
+        },
+        "recommendation": {
+          "type": "string",
+          "description": "Optional recommendation shown on the question card for this option and included in the export report"
         }
       }
     },
