@@ -1484,7 +1484,7 @@ function refreshMiniTreeView() {
   if (!state.tree || !els.miniTreeCanvas) return;
   var svgNs = 'http://www.w3.org/2000/svg';
   var width = 320;
-  var height = 150;
+  var height = 220;
   var positions = buildMiniTreePositions(width, height);
   var currentId = getCurrentPayloadId();
   var pathState = getDecisionPathState();
@@ -1519,7 +1519,7 @@ function refreshMiniTreeView() {
     var isResult = !!state.tree.results[id];
     var isPath = !!pathNodeLookup[id];
     var isCurrent = id === currentId;
-    var radius = isCurrent ? 7 : 4.5;
+    var radius = isCurrent ? 21 : 13.5;
     circle.setAttribute('cx', pos.x);
     circle.setAttribute('cy', pos.y);
     circle.setAttribute('r', radius);
@@ -1581,8 +1581,8 @@ function buildMiniTreeDepthPositions(width, height) {
     levels[depth].push(id);
   });
   var positions = {};
-  var xPad = 14;
-  var yPad = 14;
+  var xPad = 26;
+  var yPad = 26;
   var depthCount = Math.max(maxDepth, 1);
   Object.keys(levels).forEach(function (depthKey) {
     var depth = Number(depthKey);
@@ -1603,8 +1603,8 @@ function normalizeMiniTreePositions(sourcePositions, width, height) {
   var maxX = Math.max.apply(null, ids.map(function (id) { return sourcePositions[id].x; }));
   var minY = Math.min.apply(null, ids.map(function (id) { return sourcePositions[id].y; }));
   var maxY = Math.max.apply(null, ids.map(function (id) { return sourcePositions[id].y; }));
-  var xPad = 14;
-  var yPad = 14;
+  var xPad = 26;
+  var yPad = 26;
   var usableWidth = Math.max(width - (xPad * 2), 1);
   var usableHeight = Math.max(height - (yPad * 2), 1);
   var rangeX = maxX - minX;

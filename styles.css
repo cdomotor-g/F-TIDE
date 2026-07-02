@@ -124,7 +124,7 @@ body {
 .mini-tree-card:active { transform: translateY(1px); }
 .mini-tree-canvas {
   width: 100%;
-  height: 150px;
+  height: 220px;
   border-radius: 10px;
   border: 1px solid rgba(71, 85, 111, 0.5);
   background: #08101f;
@@ -132,10 +132,10 @@ body {
 }
 .mini-tree-svg { display: block; width: 100%; height: 100%; }
 .mini-tree-edge { stroke: #64748b; stroke-width: 1; opacity: 0.58; }
-.mini-tree-node { fill: #2563eb; stroke: #93c5fd; stroke-width: 1.2; }
+.mini-tree-node { fill: #2563eb; stroke: #93c5fd; stroke-width: 3.6; }
 .mini-tree-node.result { fill: #047857; stroke: #86efac; }
 .mini-tree-node.start { fill: #dc2626; stroke: #fecaca; }
-.mini-tree-node.current { fill: #f97316; stroke: #fcd34d; stroke-width: 3; }
+.mini-tree-node.current { fill: #f97316; stroke: #fcd34d; stroke-width: 9; }
 .mini-tree-icon { text-anchor: middle; dominant-baseline: central; pointer-events: none; user-select: none; }
 .meta-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .meta-field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
@@ -540,7 +540,7 @@ details summary::-webkit-details-marker { display: none; }
 
 
 .mini-tree-edge.path { stroke: #f59e0b; stroke-width: 2.2; opacity: 0.95; }
-.mini-tree-node.path { fill: #7c3aed; stroke: #ddd6fe; stroke-width: 2.2; }
+.mini-tree-node.path { fill: #7c3aed; stroke: #ddd6fe; stroke-width: 6.6; }
 
 /* Sessions modal */
 .sessions-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
@@ -551,7 +551,7 @@ details summary::-webkit-details-marker { display: none; }
 .session-item-meta { font-size: 13px; color: var(--muted); }
 .session-item-actions { display: flex; gap: 8px; flex-shrink: 0; }
 .sessions-empty { color: var(--muted); font-size: 14px; text-align: center; padding: 24px 0; }
-.mini-tree-node.path.current { fill: #f97316; stroke: #fde68a; stroke-width: 3.4; }
+.mini-tree-node.path.current { fill: #f97316; stroke: #fde68a; stroke-width: 10.2; }
 
 
 .validation-warning-list {
