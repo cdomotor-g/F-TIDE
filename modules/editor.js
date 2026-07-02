@@ -5,7 +5,7 @@ import { clone, escapeHtml, escapeAttr, uniqueStrings } from './utils.js';
 import { validateTree, validateSingleNode, validateSingleResult, getTreeValidationWarnings, formatTreeValidationWarningSummary } from './validation.js';
 // Circular imports resolved via ES module live bindings.
 import { renderNode, renderResult, updateButtons, clearMissingRuleForm, hideResultView, setSaveStatus } from './runner.js';
-import { refreshTreeView, refreshMiniTreeView, syncMiniTreeView, highlightCurrentTreeViewPayload, refreshTablesViewIfOpen, highlightCurrentMiniTreePayload } from './tree-view.js';
+import { refreshTreeView, refreshMiniTreeView, syncMiniTreeView, highlightCurrentTreeViewPayload, refreshTablesViewIfOpen, highlightCurrentMiniTreePayload, getSuggestedNewPayloadPosition } from './tree-view.js';
 import { saveTreeJson, appendChangeLog } from './file-ops.js';
 
 var pendingValidationProceed = null;
@@ -397,7 +397,7 @@ export function buildOptionRow(scope, option, index, total) {
     '</div></div>' +
     '<div class="editor-row-grid">' +
     '<div class="editor-field"><label>Label</label><input data-scope="' + scope + '" data-option-field="label" data-index="' + index + '" type="text" value="' + escapeAttr(option && option.label || '') + '" /></div>' +
-    '<div class="editor-field"><label>Next target</label>' + buildTargetSelect(scope, index, option && option.next || '') + '<div class="editor-help">Question nodes and results are both listed.</div></div>' +
+    '<div class="editor-field"><label>Next target</label>' + buildTargetSelect(scope, index, option && option.next || '') + '<div class="editor-help">Question nodes and results are both listed. Leave unset to wire it up later in the tree map (right-click the node).</div></div>' +
     '<div class="editor-field"><label>Risk score</label><input data-scope="' + scope + '" data-option-field="riskScore" data-index="' + index + '" type="number" step="1" value="' + escapeAttr(riskScore) + '" placeholder="0" /><div class="editor-help">Points added to cumulative risk when this answer is chosen.</div></div>' +
     '</div></div>';
 }
@@ -576,15 +576,10 @@ export function renderValidationSummary(scope) {
   var warnings = getPayloadValidationWarnings(payload, mode, scope === 'create');
   if (state.tree) {
     try {
-      var previewTree = clone(state.tree);
-      if (scope === 'create') {
-        if (mode === 'node') previewTree.nodes[payload.id] = clone(payload);
-        else previewTree.results[payload.id] = clone(payload);
-      } else {
-        if (mode === 'node') previewTree.nodes[state.currentPayload.id] = clone(payload);
-        else previewTree.results[state.currentPayload.id] = clone(payload);
-      }
-      warnings = uniqueStrings(warnings.concat(getTreeValidationWarnings(previewTree) || []));
+      var previewTree = getPreviewTreeForPayload(scope, mode, payload);
+      var treeWarnings = getNewlyIntroducedTreeWarnings(previewTree);
+      if (scope === 'create') treeWarnings = filterUnwiredPayloadWarnings(treeWarnings, payload.id);
+      warnings = uniqueStrings(warnings.concat(treeWarnings));
     } catch (_err) {
       warnings = uniqueStrings(warnings);
     }
@@ -635,13 +630,15 @@ export function getPayloadValidationWarnings(payload, mode, isCreate) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return warnings;
   if (mode === 'node') {
     var options = Array.isArray(payload.options) ? payload.options : [];
-    if (!options.length) warnings.push("Node '" + (payload.id || 'new node') + "' has no options.");
+    // A brand-new node is expected to be unwired: no options / empty rows are
+    // fine at creation time and can be connected later from the tree map.
+    if (!options.length && !isCreate) warnings.push("Node '" + (payload.id || 'new node') + "' has no options.");
     options.forEach(function (option, index) {
       var label = String(option && option.label || '').trim();
       var next = String(option && option.next || '').trim();
-      if (!label && !next) { warnings.push('Option ' + (index + 1) + ' is empty.'); return; }
+      if (!label && !next) { if (!isCreate) warnings.push('Option ' + (index + 1) + ' is empty.'); return; }
       if (!label) warnings.push('Option ' + (index + 1) + ' is missing a label.');
-      if (!next) { warnings.push("Option '" + (label || ('Option ' + (index + 1))) + "' is missing a target."); return; }
+      if (!next) { if (!isCreate) warnings.push("Option '" + (label || ('Option ' + (index + 1))) + "' is missing a target."); return; }
       if (state.tree && !targetExists(next) && !(isCreate && next === payload.id)) {
         warnings.push("Option '" + (label || ('Option ' + (index + 1))) + "' points to missing target '" + next + "'.");
       }
@@ -704,6 +701,29 @@ export function getPreviewTreeForPayload(scope, mode, payload) {
   return previewTree;
 }
 
+export function getNewlyIntroducedTreeWarnings(previewTree) {
+  // Only surface warnings this change would add — pre-existing tree warnings
+  // (e.g. an orphan created earlier) should not nag on every unrelated apply.
+  var existing = {};
+  (getTreeValidationWarnings(state.tree) || []).forEach(function (message) { existing[message] = true; });
+  return (getTreeValidationWarnings(previewTree) || []).filter(function (message) { return !existing[message]; });
+}
+
+export function filterUnwiredPayloadWarnings(warnings, payloadId) {
+  // A freshly created node has no incoming links or wired options yet by
+  // definition; suppress those warnings so creation is friction-free.
+  var unwired = [
+    "Orphan node '" + payloadId + "' has no incoming references.",
+    "Node '" + payloadId + "' has no options."
+  ];
+  return (warnings || []).filter(function (message) {
+    if (unwired.indexOf(message) !== -1) return false;
+    if (message.indexOf("Node '" + payloadId + "' has an empty option row") === 0) return false;
+    if (message.indexOf("Node '" + payloadId + "' option ") === 0 && message.indexOf('is missing a target') !== -1) return false;
+    return true;
+  });
+}
+
 export function setEditorError(message) {
   els.editorMessage.textContent = message;
   els.editorMessage.className = 'footnote editor-message-top bad';
@@ -733,7 +753,7 @@ export function finalizeAppliedPayloadEdit(edited, saveAfter, warnings) {
   refreshMiniTreeView();
   refreshTablesViewIfOpen();
   updateEditorDirtyState();
-  els.editorMessage.textContent = 'Edits applied to the live tree.' + (warnings && warnings.length ? ' ' + formatTreeValidationWarningSummary({ nodes: state.tree.nodes, results: state.tree.results, startNode: state.tree.startNode }) : '');
+  els.editorMessage.textContent = 'Edits applied to the live tree.' + (warnings && warnings.length ? ' ' + warnings.join(' ') : '');
   els.editorMessage.className = 'footnote editor-message-top good';
   setSaveStatus('Live tree updated. Save tree.json to persist.');
   if (saveAfter) saveTreeJson();
@@ -741,11 +761,22 @@ export function finalizeAppliedPayloadEdit(edited, saveAfter, warnings) {
 
 export function finalizeCreatedPayload(created, warnings, createMode) {
   var mode = createMode || state.createMode;
+  if (mode !== 'node' && mode !== 'result') {
+    console.error('Create failed: unknown payload mode', mode);
+    els.createPayloadMessage.textContent = 'Create failed: the editor lost track of whether this is a question or a result. Close and reopen the create panel.';
+    els.createPayloadMessage.className = 'footnote bad';
+    return;
+  }
+  if (typeof created.x !== 'number' || typeof created.y !== 'number') {
+    var suggested = getSuggestedNewPayloadPosition();
+    if (suggested) { created.x = suggested.x; created.y = suggested.y; }
+  }
   if (mode === 'node') state.tree.nodes[created.id] = created; else state.tree.results[created.id] = created;
   appendChangeLog({ type: 'payloadCreated', payloadType: mode, payloadId: created.id });
-  els.createPayloadMessage.textContent = (mode === 'node' ? 'Question node ' : 'Result node ') + created.id + ' created.' + (warnings && warnings.length ? ' ' + formatTreeValidationWarningSummary(state.tree) : '');
+  var hint = mode === 'node' ? ' Wire its answers from the tree map: right-click the node to link options to targets.' : '';
+  els.createPayloadMessage.textContent = (mode === 'node' ? 'Question node ' : 'Result node ') + created.id + ' created.' + hint + (warnings && warnings.length ? ' ' + warnings.join(' ') : '');
   els.createPayloadMessage.className = 'footnote good';
-  state.createDraft = buildCreateDraft(state.createMode);
+  state.createDraft = buildCreateDraft(mode);
   state.createDraftBaseline = clone(state.createDraft);
   renderPayloadForm('create');
   if (state.currentPayload) {
@@ -767,7 +798,7 @@ export function applyCurrentPayloadEdits(saveAfter) {
     var errors = getPayloadValidationErrors(edited, state.currentMode, false);
     if (errors.length) throw new Error(errors[0]);
     var previewTree = getPreviewTreeForPayload('edit', state.currentMode, edited);
-    var warnings = uniqueStrings(getPayloadValidationWarnings(edited, state.currentMode, false).concat(getTreeValidationWarnings(previewTree)));
+    var warnings = uniqueStrings(getPayloadValidationWarnings(edited, state.currentMode, false).concat(getNewlyIntroducedTreeWarnings(previewTree)));
     var proceed = function () { finalizeAppliedPayloadEdit(edited, saveAfter, warnings); };
     if (warnings.length) {
       openValidationWarningModal({ title: 'Apply changes with warnings?', message: 'These changes may break the tree. You can cancel and fix them first, or proceed anyway.', warnings: warnings, onProceed: proceed });
@@ -900,10 +931,17 @@ export function createPayloadFromDraft() {
   try {
     syncScopeDraftFromForm('create');
     var created = clone(state.createDraft);
+    if (state.createMode === 'node') {
+      // Placeholder rows the user never filled in are dropped rather than
+      // saved as blank options; targets can be wired later in the tree map.
+      created.options = (Array.isArray(created.options) ? created.options : []).filter(function (option) {
+        return String(option && option.label || '').trim() || String(option && option.next || '').trim();
+      });
+    }
     var errors = getPayloadValidationErrors(created, state.createMode, true);
     if (errors.length) throw new Error(errors[0]);
     var previewTree = getPreviewTreeForPayload('create', state.createMode, created);
-    var warnings = uniqueStrings(getPayloadValidationWarnings(created, state.createMode, true).concat(getTreeValidationWarnings(previewTree)));
+    var warnings = uniqueStrings(getPayloadValidationWarnings(created, state.createMode, true).concat(filterUnwiredPayloadWarnings(getNewlyIntroducedTreeWarnings(previewTree), created.id)));
     var capturedCreateMode = state.createMode;
     var proceed = function () { finalizeCreatedPayload(created, warnings, capturedCreateMode); };
     if (warnings.length) {
