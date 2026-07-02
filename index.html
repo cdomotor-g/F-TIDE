@@ -22,7 +22,6 @@
           <div class="toolbar-row">
             <label class="file-label" for="jsonFileInput">Load tree.json</label>
             <input class="file-input" id="jsonFileInput" type="file" accept=".json,application/json" />
-            <button class="btn" id="saveTreeBtn" type="button" disabled>Save tree.json</button>
             <button class="btn-help" id="showSchemaBtn" type="button" title="Help" aria-label="Help">?</button>
           </div>
         </div>
@@ -214,6 +213,7 @@
       <div class="tree-view-header">
         <h2 id="treeViewTitle" style="margin:0;">Tree View</h2>
         <div class="tree-view-controls">
+          <button class="btn-small" id="saveTreeBtn" type="button" disabled>Save tree.json</button>
           <button class="btn-small" id="treeViewQuestionsOnlyBtn" type="button">Questions only</button>
           <button class="btn-small" id="treeViewAutoArrangeBtn" type="button">Auto-arrange</button>
           <button class="btn-small" id="treeViewZoomFitBtn" type="button">Zoom to fit</button>

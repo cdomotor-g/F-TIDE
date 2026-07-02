@@ -984,6 +984,7 @@ function initTreeView() {
       { selector: 'node.result', style: { 'background-color': '#047857', 'border-color': '#86efac', 'shape': 'roundrectangle' } },
       { selector: 'node.start', style: { 'background-color': '#dc2626', 'border-color': '#fecaca', 'border-width': 4 } },
       { selector: 'node.orphan', style: { 'border-color': '#fbbf24', 'border-style': 'dashed', 'border-width': 4 } },
+      { selector: 'node.has-icon', style: { 'background-image': 'data(iconImage)', 'background-fit': 'none', 'background-clip': 'none', 'background-repeat': 'no-repeat', 'background-position-x': '0%', 'background-position-y': '0%', 'background-width': '32px', 'background-height': '32px' } },
       { selector: 'node.tree-selected', style: { 'shadow-color': '#f97316', 'shadow-opacity': 0.65, 'shadow-blur': 32, 'shadow-offset-x': 0, 'shadow-offset-y': 0 } },
       { selector: 'node.tree-path', style: { 'border-color': '#f59e0b', 'border-width': 5, 'overlay-color': '#f59e0b', 'overlay-padding': '7px', 'overlay-opacity': 0.12 } },
       { selector: 'node.tree-path-current', style: { 'background-color': '#f97316', 'border-color': '#fde68a', 'border-width': 6, 'overlay-color': '#fde68a', 'overlay-padding': '10px', 'overlay-opacity': 0.2, 'shadow-color': '#f97316', 'shadow-opacity': 0.72, 'shadow-blur': 34 } },
@@ -1253,6 +1254,13 @@ function refreshTreeView() {
   runAutoArrangeLayout({ fit: true, persistMessage: null });
 }
 
+function buildTreeViewIconImage(icon) {
+  var size = 64;
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="' + size + '" height="' + size + '">'
+    + '<text x="50%" y="54%" font-size="' + Math.round(size * 0.8) + '" text-anchor="middle" dominant-baseline="middle">' + icon + '</text></svg>';
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
+
 function buildTreeViewElements() {
   var elements = [];
   if (!state.tree) return elements;
@@ -1260,14 +1268,17 @@ function buildTreeViewElements() {
   getOrphanNodeIds(state.tree).forEach(function (id) { orphanLookup[id] = true; });
   Object.keys(state.tree.nodes).forEach(function (id) {
     var node = state.tree.nodes[id];
-    var classes = 'question' + (id === state.tree.startNode ? ' start' : '') + (orphanLookup[id] ? ' orphan' : '');
-    var label = (node.icon ? node.icon + ' ' : '') + (node.question || id);
-    elements.push({ group: 'nodes', data: { id: id, label: label, type: 'question', orphan: !!orphanLookup[id] }, classes: classes });
+    var classes = 'question' + (id === state.tree.startNode ? ' start' : '') + (orphanLookup[id] ? ' orphan' : '') + (node.icon ? ' has-icon' : '');
+    var data = { id: id, label: node.question || id, type: 'question', orphan: !!orphanLookup[id] };
+    if (node.icon) data.iconImage = buildTreeViewIconImage(node.icon);
+    elements.push({ group: 'nodes', data: data, classes: classes });
   });
   Object.keys(state.tree.results).forEach(function (id) {
     var result = state.tree.results[id];
-    var label = (result.icon ? result.icon + ' ' : '') + (result.title || id);
-    elements.push({ group: 'nodes', data: { id: id, label: label, type: 'result' }, classes: 'result' });
+    var classes = 'result' + (result.icon ? ' has-icon' : '');
+    var data = { id: id, label: result.title || id, type: 'result' };
+    if (result.icon) data.iconImage = buildTreeViewIconImage(result.icon);
+    elements.push({ group: 'nodes', data: data, classes: classes });
   });
   Object.keys(state.tree.nodes).forEach(function (id) {
     var node = state.tree.nodes[id];
