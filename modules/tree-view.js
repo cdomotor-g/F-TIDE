@@ -610,18 +610,29 @@ export function refreshMiniTreeView() {
   });
   Object.keys(positions).forEach(function (id) {
     var pos = positions[id];
+    var payload = state.tree.nodes[id] || state.tree.results[id];
     var circle = document.createElementNS(svgNs, 'circle');
     var isResult = !!state.tree.results[id];
     var isPath = !!pathNodeLookup[id];
     var isCurrent = id === currentId;
+    var radius = isCurrent ? 7 : 4.5;
     circle.setAttribute('cx', pos.x);
     circle.setAttribute('cy', pos.y);
-    circle.setAttribute('r', isCurrent ? 7 : 4.5);
+    circle.setAttribute('r', radius);
     circle.setAttribute('class', 'mini-tree-node ' + (isResult ? 'result' : 'question') + (id === state.tree.startNode ? ' start' : '') + (isPath ? ' path' : '') + (isCurrent ? ' current' : ''));
     var title = document.createElementNS(svgNs, 'title');
     title.textContent = id;
     circle.appendChild(title);
     svg.appendChild(circle);
+    if (payload && payload.icon) {
+      var text = document.createElementNS(svgNs, 'text');
+      text.setAttribute('x', pos.x);
+      text.setAttribute('y', pos.y);
+      text.setAttribute('class', 'mini-tree-icon');
+      text.setAttribute('font-size', radius * 1.6);
+      text.textContent = payload.icon;
+      svg.appendChild(text);
+    }
   });
   els.miniTreeCanvas.appendChild(svg);
   highlightCurrentMiniTreePayload();
