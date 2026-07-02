@@ -420,10 +420,11 @@ export function buildReportHtml(meta) {
     return '<tr><td>' + (index + 1) + '</td>'
       + '<td><span class="icon">' + escapeHtml(step.icon || DEFAULT_ICON) + '</span> ' + escapeHtml(step.question) + '</td>'
       + '<td>' + answerHtml + '</td>'
+      + '<td>' + escapeHtml(step.recommendation || '') + '</td>'
       + '<td>' + escapeHtml(step.comment || '') + '</td>'
       + '</tr>';
   }).join('');
-  var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td></tr>' : '';
+  var outcomeRow = state.currentResult ? '<tr><td>' + (state.history.length + 1) + '</td><td>Outcome</td><td>' + escapeHtml(state.currentResult.title || 'Recommendation unavailable') + '</td><td></td></tr>' : '';
   var riskScoreBlock = '';
   if (state.currentResult && !state.currentResult.isMissingRule && state.tree && Array.isArray(state.tree.riskBands) && state.tree.riskBands.length) {
     var rScore = state.currentScore || 0;
@@ -450,7 +451,7 @@ export function buildReportHtml(meta) {
     '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
     '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
     '</div></section>' +
-    '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
+    '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Recommendation</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
     rationaleBlock + treeTablesBlock + '<p class="foot">Open this report in a browser and print to PDF.</p>' + '</body></html>';
 }
 

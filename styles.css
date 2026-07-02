@@ -172,6 +172,12 @@ body {
 .target-id { font-family: Consolas, Menlo, Monaco, monospace; font-size: 13px; color: #c7d2fe; }
 .target-meta { font-size: 12px; color: var(--muted); }
 .option-risk-pill { display: inline-block; margin-top: 4px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; background: rgba(99,102,241,.18); color: #a5b4fc; border: 1px solid rgba(99,102,241,.4); letter-spacing: .02em; }
+.option-recommendation-row {
+  padding: 8px 12px; border: 1px dashed rgba(99,102,241,.4); border-radius: 10px; background: rgba(99,102,241,.08);
+  font-size: 13px; line-height: 1.4; margin-top: -4px;
+}
+.option-recommendation-label { font-weight: 600; color: #a5b4fc; margin-right: 6px; }
+.option-recommendation-text { color: var(--text); }
 .result-box { padding: 16px; border-radius: 14px; border-left: 6px solid var(--success-border); background: var(--success-bg); }
 .result-box.warning { border-left-color: var(--warn-border); background: var(--warn-bg); }
 .result-title { margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
