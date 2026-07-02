@@ -3,7 +3,7 @@
 # Run manually or via the pre-commit hook.
 set -e
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-TS="$(git -C "$REPO_ROOT" log -1 --format="%ci" | sed 's/ /T/' | sed 's/ +0000/Z/' | sed 's/ -0000/Z/')"
+TS="$(git -C "$REPO_ROOT" log -1 --format="%cI")"
 COMMIT="$(git -C "$REPO_ROOT" log -1 --format="%h")"
 cat > "$REPO_ROOT/build-info.js" <<EOF
 window.BUILD_TIMESTAMP = "$TS";
