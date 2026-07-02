@@ -885,6 +885,14 @@ var treeViewMenuEl = null;
 var treeViewBannerEl = null;
 var newPayloadDropOffset = 0;
 
+function formatEdgeLabel(option) {
+  var label = option && option.label || '';
+  if (option && typeof option.riskScore === 'number') {
+    label += ' (' + option.riskScore + ')';
+  }
+  return label;
+}
+
 function getCurrentPayloadId() {
   return state.currentPayload && state.currentPayload.id ? state.currentPayload.id : state.currentNodeId;
 }
@@ -1191,7 +1199,7 @@ function rebuildTreeViewEdgesForNode(nodeId) {
   if (!node) return;
   (node.options || []).forEach(function (option, index) {
     if (!option || !option.next || (!state.tree.nodes[option.next] && !state.tree.results[option.next])) return;
-    treeViewCy.add({ group: 'edges', data: { id: nodeId + '__' + index, source: nodeId, target: option.next, label: option.label || '' } });
+    treeViewCy.add({ group: 'edges', data: { id: nodeId + '__' + index, source: nodeId, target: option.next, label: formatEdgeLabel(option) } });
   });
   updateTreeViewDecisionPathHighlight();
 }
@@ -1248,7 +1256,7 @@ function buildTreeViewElements() {
     var node = state.tree.nodes[id];
     node.options.forEach(function (option, index) {
       if (!option || !option.next || (!state.tree.nodes[option.next] && !state.tree.results[option.next])) return;
-      elements.push({ group: 'edges', data: { id: id + '__' + index, source: id, target: option.next, label: option.label || '' } });
+      elements.push({ group: 'edges', data: { id: id + '__' + index, source: id, target: option.next, label: formatEdgeLabel(option) } });
     });
   });
   return elements;
