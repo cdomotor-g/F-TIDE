@@ -59,6 +59,7 @@ export function updateButtons() {
   var canExport = hasTree && (state.history.length > 0 || !!state.currentResult);
   var canEdit = hasTree && !!state.currentPayload;
   if (els.saveTreeBtn) els.saveTreeBtn.disabled = !hasTree;
+  if (els.forkTreeBtn) els.forkTreeBtn.disabled = !hasTree;
   if (els.saveSessionModalBtn) els.saveSessionModalBtn.disabled = !hasTree;
   if (els.openTablesBtn) els.openTablesBtn.disabled = !hasTree;
   els.restartBtn.disabled = !hasTree;
@@ -254,10 +255,11 @@ export function renderOptionTargetRows(node) {
     target.className = 'target-cell';
     var id = document.createElement('div');
     id.className = 'target-id';
-    id.textContent = option.next;
+    id.textContent = option.next || '—';
     var meta = document.createElement('div');
     meta.className = 'target-meta';
-    meta.textContent = state.tree.nodes[option.next] ? 'Question node' : (state.tree.results[option.next] ? 'Result' : 'Unknown');
+    var nextId = String(option.next || '').trim();
+    meta.textContent = state.tree.nodes[nextId] ? 'Question node' : (state.tree.results[nextId] ? 'Result' : (nextId ? 'Unknown' : 'Not linked yet'));
     target.appendChild(id);
     target.appendChild(meta);
     if (hasRiskBands && typeof option.riskScore === 'number') {
@@ -471,6 +473,7 @@ export function saveMissingRuleCase() {
     treeTitle: state.tree ? (state.tree.title || '') : '',
     treeVersion: state.tree ? (state.tree.version || '') : '',
     treeVersionHash: state.tree ? (state.tree.versionHash || '') : '',
+    branchId: state.tree ? (state.tree.branchId || 'main') : 'main',
     path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon }; }),
     selectedResultId: els.missingRuleSelect.value || null,
     proposedRecommendation: note

@@ -2,8 +2,8 @@ import { state } from './modules/state.js';
 import { els } from './modules/dom.js';
 import { setSaveStatus, updateButtons, renderCurrentPayloadJson, renderOptionTargetRows, updateProgress, restart, goBack, copyCurrentId, applyMissingRuleSelection, saveMissingRuleCase } from './modules/runner.js';
 import { setEditorMode, openCurrentPayloadEditor, closeEditor, openCreatePayloadPanel, closeCreatePayloadPanel, createPayloadFromDraft, openTreeViewCreatePayloadPanel, handlePayloadFormInput, handlePayloadFormClick, deleteCurrentPayload, renameCurrentPayloadId, applyCurrentPayloadEdits, closeIconPicker, chooseIconForScope, cancelValidationWarningModal, proceedValidationWarningModal } from './modules/editor.js';
-import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView } from './modules/tree-view.js';
-import { handleJsonFileSelected, saveTreeJson, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile, generateSessionId } from './modules/file-ops.js';
+import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView, cancelTreeViewLinking, hideTreeViewContextMenu } from './modules/tree-view.js';
+import { handleJsonFileSelected, saveTreeJson, forkCurrentTreeBranch, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile, generateSessionId } from './modules/file-ops.js';
 
 init();
 
@@ -45,7 +45,8 @@ function bindEvents() {
     });
   }
   if (els.saveTreeBtn) els.saveTreeBtn.addEventListener('click', saveTreeJson);
-els.restartBtn.addEventListener('click', restart);
+  if (els.forkTreeBtn) els.forkTreeBtn.addEventListener('click', forkCurrentTreeBranch);
+  els.restartBtn.addEventListener('click', restart);
   els.backBtn.addEventListener('click', goBack);
   els.restartResultBtn.addEventListener('click', restart);
   els.backResultBtn.addEventListener('click', goBack);
@@ -70,7 +71,12 @@ els.restartBtn.addEventListener('click', restart);
       if (els.iconPickerOverlay && !els.iconPickerOverlay.classList.contains('hidden')) { closeIconPicker(); return; }
       if (els.validationWarningOverlay && !els.validationWarningOverlay.classList.contains('hidden')) { cancelValidationWarningModal(); return; }
       if (!els.editorModalOverlay.classList.contains('hidden')) { closeEditor(); return; }
-      if (!els.treeViewOverlay.classList.contains('hidden')) { closeTreeView(); return; }
+      if (!els.treeViewOverlay.classList.contains('hidden')) {
+        hideTreeViewContextMenu();
+        if (cancelTreeViewLinking()) return;
+        closeTreeView();
+        return;
+      }
       if (els.sessionsModalOverlay && !els.sessionsModalOverlay.classList.contains('hidden')) { closeSessionsModal(); return; }
       if (els.schemaModalOverlay && !els.schemaModalOverlay.classList.contains('hidden')) { closeSchemaModal(); return; }
     }

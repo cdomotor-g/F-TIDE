@@ -2,12 +2,17 @@ import { state } from './state.js';
 import { els } from './dom.js';
 import { escapeHtml, escapeAttr, uniqueStrings } from './utils.js';
 import { getOrphanNodeIds } from './validation.js';
-import { setSaveStatus } from './runner.js';
-import { openPayloadEditorForId } from './editor.js';
+import { setSaveStatus, renderNode } from './runner.js';
+import { openPayloadEditorForId, updateEditorDirtyState } from './editor.js';
+import { appendChangeLog } from './file-ops.js';
 
 var treeViewCy = null;
 var treeViewSelectedId = null;
 var treeViewQuestionsOnly = false;
+var treeViewLinking = null; // { sourceId, optionIndex } while picking a target for an answer
+var treeViewMenuEl = null;
+var treeViewBannerEl = null;
+var newPayloadDropOffset = 0;
 
 export function getCurrentPayloadId() {
   return state.currentPayload && state.currentPayload.id ? state.currentPayload.id : state.currentNodeId;
@@ -54,13 +59,15 @@ export function openTreeView() {
 }
 
 export function closeTreeView() {
+  cancelTreeViewLinking();
+  hideTreeViewContextMenu();
   els.treeViewOverlay.classList.add('hidden');
   treeViewSelectedId = null;
   treeViewQuestionsOnly = false;
   els.treeViewQuestionsOnlyBtn.style.backgroundColor = '';
   els.treeViewQuestionsOnlyBtn.style.borderColor = '';
   if (treeViewCy) {
-    treeViewCy.elements().removeClass('tree-selected tree-match tree-dim tree-path tree-path-current edge-path');
+    treeViewCy.elements().removeClass('tree-selected tree-match tree-dim tree-path tree-path-current edge-path tree-link-source');
   }
 }
 
@@ -86,24 +93,245 @@ export function initTreeView() {
       { selector: 'node.tree-path-current', style: { 'background-color': '#f97316', 'border-color': '#fde68a', 'border-width': 6, 'overlay-color': '#fde68a', 'overlay-padding': '10px', 'overlay-opacity': 0.2, 'shadow-color': '#f97316', 'shadow-opacity': 0.72, 'shadow-blur': 34 } },
       { selector: 'node.tree-match', style: { 'overlay-color': '#fcd34d', 'overlay-padding': '6px', 'overlay-opacity': 0.18 } },
       { selector: 'node.tree-dim', style: { 'opacity': 0.2 } },
+      { selector: 'node.tree-link-source', style: { 'border-color': '#38bdf8', 'border-width': 5, 'border-style': 'dashed', 'overlay-color': '#38bdf8', 'overlay-padding': '8px', 'overlay-opacity': 0.16 } },
       { selector: 'edge', style: { 'curve-style': 'bezier', 'target-arrow-shape': 'triangle', 'target-arrow-color': '#94a3b8', 'line-color': '#64748b', 'opacity': 0.85, 'width': 2, 'label': 'data(label)', 'font-size': 11, 'text-rotation': 'autorotate', 'text-margin-y': -10, 'color': '#e2e8f0', 'text-background-color': '#111827', 'text-background-opacity': 0.88, 'text-background-shape': 'roundrectangle', 'text-border-color': '#1e293b', 'text-border-width': 1, 'text-border-opacity': 0.85 } },
       { selector: 'edge.edge-path', style: { 'line-color': '#f59e0b', 'target-arrow-color': '#f59e0b', 'width': 4, 'opacity': 1, 'color': '#fde68a', 'text-background-color': '#78350f', 'text-background-opacity': 0.96, 'text-border-color': '#f59e0b', 'text-border-width': 1.5 } }
     ]
   });
   treeViewCy.on('tap', 'node', function (event) {
+    hideTreeViewContextMenu();
     var nodeId = event.target.id();
+    if (treeViewLinking) {
+      completeTreeViewLink(nodeId);
+      return;
+    }
     selectTreeViewNode(nodeId);
     openPayloadEditorForId(nodeId);
   });
   treeViewCy.on('tap', function (event) {
     if (event.target !== treeViewCy) return;
+    hideTreeViewContextMenu();
+    if (treeViewLinking) {
+      cancelTreeViewLinking();
+      return;
+    }
     clearTreeViewSelection();
     updateTreeViewDecisionPathHighlight();
   });
+  treeViewCy.on('cxttap', 'node', function (event) {
+    if (treeViewLinking) cancelTreeViewLinking();
+    showTreeViewNodeMenu(event.target.id(), event);
+  });
+  treeViewCy.on('cxttap', 'edge', function (event) {
+    if (treeViewLinking) cancelTreeViewLinking();
+    showTreeViewEdgeMenu(event.target.id(), event);
+  });
+  treeViewCy.on('pan zoom', function () { hideTreeViewContextMenu(); });
+  els.treeViewCanvas.addEventListener('contextmenu', function (event) { event.preventDefault(); });
   treeViewCy.on('dragfree', 'node', function () {
     persistTreeViewPositions({ message: 'Tree layout moved. Save tree.json to persist.' });
     refreshMiniTreeView();
     updateTreeViewDecisionPathHighlight();
+  });
+}
+
+// --- Visual answer linking (right-click a node or edge to rewire options) ---
+
+export function isTreeViewLinking() { return !!treeViewLinking; }
+
+function ensureTreeViewChrome() {
+  if (!treeViewMenuEl) {
+    treeViewMenuEl = document.createElement('div');
+    treeViewMenuEl.className = 'tree-view-context-menu hidden';
+    els.treeViewCanvas.parentElement.appendChild(treeViewMenuEl);
+  }
+  if (!treeViewBannerEl) {
+    treeViewBannerEl = document.createElement('div');
+    treeViewBannerEl.className = 'tree-view-link-banner hidden';
+    els.treeViewCanvas.parentElement.appendChild(treeViewBannerEl);
+  }
+}
+
+export function hideTreeViewContextMenu() {
+  if (treeViewMenuEl) treeViewMenuEl.classList.add('hidden');
+}
+
+function positionTreeViewContextMenu(event) {
+  var canvasRect = els.treeViewCanvas.getBoundingClientRect();
+  var parentRect = els.treeViewCanvas.parentElement.getBoundingClientRect();
+  var clientX = event.originalEvent ? event.originalEvent.clientX : canvasRect.left;
+  var clientY = event.originalEvent ? event.originalEvent.clientY : canvasRect.top;
+  var x = clientX - parentRect.left;
+  var y = clientY - parentRect.top;
+  treeViewMenuEl.style.left = '0px';
+  treeViewMenuEl.style.top = '0px';
+  treeViewMenuEl.classList.remove('hidden');
+  var menuRect = treeViewMenuEl.getBoundingClientRect();
+  x = Math.min(x, parentRect.width - menuRect.width - 12);
+  y = Math.min(y, parentRect.height - menuRect.height - 12);
+  treeViewMenuEl.style.left = Math.max(6, x) + 'px';
+  treeViewMenuEl.style.top = Math.max(6, y) + 'px';
+}
+
+function menuItemButton(label, handler, danger) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'tree-view-menu-item' + (danger ? ' danger' : '');
+  btn.innerHTML = label;
+  btn.addEventListener('click', function () {
+    hideTreeViewContextMenu();
+    handler();
+  });
+  return btn;
+}
+
+function describeOptionTarget(option) {
+  var next = String(option && option.next || '').trim();
+  if (!next) return '<span class="menu-target unset">no target yet</span>';
+  return '<span class="menu-target">' + escapeHtml(next) + '</span>';
+}
+
+export function showTreeViewNodeMenu(payloadId, event) {
+  if (!state.tree) return;
+  ensureTreeViewChrome();
+  treeViewMenuEl.innerHTML = '';
+  var heading = document.createElement('div');
+  heading.className = 'tree-view-menu-heading';
+  var node = state.tree.nodes[payloadId];
+  heading.textContent = payloadId;
+  treeViewMenuEl.appendChild(heading);
+  treeViewMenuEl.appendChild(menuItemButton('Open in editor', function () { selectTreeViewNode(payloadId); openPayloadEditorForId(payloadId); }));
+  if (node) {
+    (node.options || []).forEach(function (option, index) {
+      var label = String(option && option.label || '').trim() || ('Option ' + (index + 1));
+      treeViewMenuEl.appendChild(menuItemButton(
+        'Link answer <strong>' + escapeHtml(label) + '</strong> &rarr; ' + describeOptionTarget(option),
+        function () { startTreeViewLinking(payloadId, index); }
+      ));
+    });
+    treeViewMenuEl.appendChild(menuItemButton('&#43; Add answer option&hellip;', function () { addOptionAndLink(payloadId); }));
+  }
+  positionTreeViewContextMenu(event);
+}
+
+export function showTreeViewEdgeMenu(edgeId, event) {
+  if (!state.tree) return;
+  var parts = String(edgeId).split('__');
+  var optionIndex = Number(parts.pop());
+  var nodeId = parts.join('__');
+  var node = state.tree.nodes[nodeId];
+  var option = node && Array.isArray(node.options) ? node.options[optionIndex] : null;
+  if (!option) return;
+  ensureTreeViewChrome();
+  treeViewMenuEl.innerHTML = '';
+  var heading = document.createElement('div');
+  heading.className = 'tree-view-menu-heading';
+  var label = String(option.label || '').trim() || ('Option ' + (optionIndex + 1));
+  heading.textContent = nodeId + ' — ' + label;
+  treeViewMenuEl.appendChild(heading);
+  treeViewMenuEl.appendChild(menuItemButton('Retarget this answer&hellip;', function () { startTreeViewLinking(nodeId, optionIndex); }));
+  treeViewMenuEl.appendChild(menuItemButton('Remove this answer option', function () { removeNodeOption(nodeId, optionIndex); }, true));
+  positionTreeViewContextMenu(event);
+}
+
+export function startTreeViewLinking(sourceId, optionIndex) {
+  if (!state.tree || !treeViewCy) return;
+  var node = state.tree.nodes[sourceId];
+  var option = node && Array.isArray(node.options) ? node.options[optionIndex] : null;
+  if (!option) return;
+  ensureTreeViewChrome();
+  treeViewLinking = { sourceId: sourceId, optionIndex: optionIndex };
+  treeViewCy.nodes().removeClass('tree-link-source');
+  treeViewCy.getElementById(sourceId).addClass('tree-link-source');
+  els.treeViewCanvas.classList.add('linking');
+  var label = String(option.label || '').trim() || ('Option ' + (optionIndex + 1));
+  treeViewBannerEl.innerHTML = 'Click the node this answer should lead to: <strong>' + escapeHtml(sourceId) + '</strong> &rarr; answer <strong>' + escapeHtml(label) + '</strong> &rarr; ? &nbsp;<span class="banner-hint">(Esc or click empty space to cancel)</span>';
+  treeViewBannerEl.classList.remove('hidden');
+}
+
+export function cancelTreeViewLinking() {
+  if (!treeViewLinking) return false;
+  treeViewLinking = null;
+  if (treeViewCy) treeViewCy.nodes().removeClass('tree-link-source');
+  els.treeViewCanvas.classList.remove('linking');
+  if (treeViewBannerEl) treeViewBannerEl.classList.add('hidden');
+  return true;
+}
+
+export function completeTreeViewLink(targetId) {
+  if (!treeViewLinking || !state.tree) return;
+  var linking = treeViewLinking;
+  var node = state.tree.nodes[linking.sourceId];
+  var option = node && Array.isArray(node.options) ? node.options[linking.optionIndex] : null;
+  if (!option) { cancelTreeViewLinking(); return; }
+  if (targetId === linking.sourceId) {
+    treeViewBannerEl.innerHTML = 'An answer cannot point back at its own question. Pick a different node, or press Esc to cancel.';
+    return;
+  }
+  var previousTarget = String(option.next || '').trim() || null;
+  option.next = targetId;
+  appendChangeLog({ type: 'optionRetargeted', payloadType: 'node', payloadId: node.id, optionIndex: linking.optionIndex, optionLabel: option.label || '', previousTarget: previousTarget, newTarget: targetId });
+  cancelTreeViewLinking();
+  rebuildTreeViewEdgesForNode(node.id);
+  updateTreeViewOrphanClasses();
+  refreshMiniTreeView();
+  refreshTablesViewIfOpen();
+  if (state.currentMode === 'node' && state.currentNodeId === node.id) renderNode();
+  updateEditorDirtyState();
+  var label = String(option.label || '').trim() || ('Option ' + (linking.optionIndex + 1));
+  setSaveStatus("Linked " + node.id + " — '" + label + "' → " + targetId + '. Save tree.json to persist.');
+}
+
+function addOptionAndLink(nodeId) {
+  var node = state.tree && state.tree.nodes[nodeId];
+  if (!node) return;
+  var label = String(prompt('Label for the new answer (e.g. Yes):', '') || '').trim();
+  if (!label) return;
+  if (!Array.isArray(node.options)) node.options = [];
+  node.options.push({ label: label, next: '' });
+  appendChangeLog({ type: 'optionAdded', payloadType: 'node', payloadId: nodeId, optionLabel: label });
+  refreshTablesViewIfOpen();
+  if (state.currentMode === 'node' && state.currentNodeId === nodeId) renderNode();
+  updateEditorDirtyState();
+  startTreeViewLinking(nodeId, node.options.length - 1);
+}
+
+function removeNodeOption(nodeId, optionIndex) {
+  var node = state.tree && state.tree.nodes[nodeId];
+  if (!node || !Array.isArray(node.options) || !node.options[optionIndex]) return;
+  var option = node.options[optionIndex];
+  var label = String(option.label || '').trim() || ('Option ' + (optionIndex + 1));
+  if (!confirm("Remove answer '" + label + "' from " + nodeId + '? This updates the live tree only until you save tree.json.')) return;
+  node.options.splice(optionIndex, 1);
+  appendChangeLog({ type: 'optionRemoved', payloadType: 'node', payloadId: nodeId, optionLabel: option.label || '', previousTarget: option.next || null });
+  rebuildTreeViewEdgesForNode(nodeId);
+  updateTreeViewOrphanClasses();
+  refreshMiniTreeView();
+  refreshTablesViewIfOpen();
+  if (state.currentMode === 'node' && state.currentNodeId === nodeId) renderNode();
+  updateEditorDirtyState();
+  setSaveStatus("Removed answer '" + label + "' from " + nodeId + '. Save tree.json to persist.');
+}
+
+function rebuildTreeViewEdgesForNode(nodeId) {
+  if (!treeViewCy || !state.tree) return;
+  treeViewCy.edges('[source = "' + nodeId + '"]').remove();
+  var node = state.tree.nodes[nodeId];
+  if (!node) return;
+  (node.options || []).forEach(function (option, index) {
+    if (!option || !option.next || (!state.tree.nodes[option.next] && !state.tree.results[option.next])) return;
+    treeViewCy.add({ group: 'edges', data: { id: nodeId + '__' + index, source: nodeId, target: option.next, label: option.label || '' } });
+  });
+  updateTreeViewDecisionPathHighlight();
+}
+
+function updateTreeViewOrphanClasses() {
+  if (!treeViewCy || !state.tree) return;
+  var orphanLookup = {};
+  getOrphanNodeIds(state.tree).forEach(function (id) { orphanLookup[id] = true; });
+  treeViewCy.nodes().forEach(function (cyNode) {
+    cyNode.toggleClass('orphan', !!orphanLookup[cyNode.id()]);
+    cyNode.data('orphan', !!orphanLookup[cyNode.id()]);
   });
 }
 
@@ -153,6 +381,30 @@ export function buildTreeViewElements() {
     });
   });
   return elements;
+}
+
+export function getSuggestedNewPayloadPosition() {
+  // Drop new payloads somewhere visible instead of at the canvas origin,
+  // staggering repeated creations so they don't stack on top of each other.
+  if (!state.tree) return null;
+  newPayloadDropOffset = (newPayloadDropOffset + 48) % 240;
+  if (treeViewCy) {
+    var extent = treeViewCy.extent();
+    return {
+      x: Math.round(extent.x1 + (extent.w / 2) + newPayloadDropOffset),
+      y: Math.round(extent.y1 + (extent.h / 2) + newPayloadDropOffset)
+    };
+  }
+  var stored = getStoredTreePositions(state.tree);
+  var ids = Object.keys(stored);
+  if (!ids.length) return null;
+  var sumX = 0;
+  var maxY = -Infinity;
+  ids.forEach(function (id) {
+    sumX += stored[id].x;
+    if (stored[id].y > maxY) maxY = stored[id].y;
+  });
+  return { x: Math.round(sumX / ids.length) + newPayloadDropOffset, y: Math.round(maxY + 140) };
 }
 
 export function getStoredTreePositions(tree) {

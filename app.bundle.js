@@ -311,14 +311,14 @@ function validateSingleNode(node) {
   if (!node.id) throw new Error("Each node must have an 'id'.");
   if (!String(node.question || '').trim()) throw new Error("Node '" + node.id + "' is missing 'question'.");
   if (!Array.isArray(node.options)) throw new Error("Node '" + node.id + "' is missing 'options' array.");
-  if (node.options.length === 0) throw new Error("Node '" + node.id + "' must have at least one option.");
+  // Empty options arrays and blank labels/targets are allowed here so a node
+  // can be created first and wired up later — they surface as warnings via
+  // getTreeValidationWarnings instead of blocking the tree from loading.
   var seenLabels = new Set();
   node.options.forEach(function (option, idx) {
     if (!option || typeof option !== 'object' || Array.isArray(option)) throw new Error("Node '" + node.id + "' option " + (idx + 1) + ' must be an object.');
     var label = String(option.label || '').trim();
-    var next = String(option.next || '').trim();
-    if (!label) throw new Error("Node '" + node.id + "' option " + (idx + 1) + " is missing 'label'.");
-    if (!next) throw new Error("Node '" + node.id + "' option '" + label + "' is missing 'next'.");
+    if (!label) return;
     if (seenLabels.has(label.toLowerCase())) throw new Error("Node '" + node.id + "' has duplicate option label '" + label + "'.");
     seenLabels.add(label.toLowerCase());
   });
@@ -355,13 +355,9 @@ function validateTree(tree) {
     if (seenIds.has(result.id)) throw new Error("Duplicate payload id '" + result.id + "'.");
     seenIds.add(result.id);
   });
-  Object.values(tree.nodes).forEach(function (node) {
-    node.options.forEach(function (option) {
-      if (!tree.nodes[option.next] && !tree.results[option.next]) {
-        throw new Error("Node '" + node.id + "' option '" + option.label + "' points to missing target '" + option.next + "'.");
-      }
-    });
-  });
+  // Options with blank or dangling targets are reported as warnings by
+  // getTreeValidationWarnings; the runner falls back to a missing-rule result
+  // at runtime, so they must not prevent the tree from loading.
   return getTreeValidationWarnings(tree);
 }
 
@@ -373,7 +369,10 @@ function formatTreeValidationWarningSummary(tree) {
 }
 
 // ===== modules/runner.js =====
+// Circular imports resolved via ES module live bindings — functions are only
 // called at runtime after all modules have finished evaluating.
+
+
 function hideResultView() {
   els.questionView.classList.remove('hidden');
   els.resultView.classList.add('hidden');
@@ -622,10 +621,11 @@ function renderOptionTargetRows(node) {
     target.className = 'target-cell';
     var id = document.createElement('div');
     id.className = 'target-id';
-    id.textContent = option.next;
+    id.textContent = option.next || '—';
     var meta = document.createElement('div');
     meta.className = 'target-meta';
-    meta.textContent = state.tree.nodes[option.next] ? 'Question node' : (state.tree.results[option.next] ? 'Result' : 'Unknown');
+    var nextId = String(option.next || '').trim();
+    meta.textContent = state.tree.nodes[nextId] ? 'Question node' : (state.tree.results[nextId] ? 'Result' : (nextId ? 'Unknown' : 'Not linked yet'));
     target.appendChild(id);
     target.appendChild(meta);
     if (hasRiskBands && typeof option.riskScore === 'number') {
@@ -880,6 +880,10 @@ async function copyCurrentId() {
 var treeViewCy = null;
 var treeViewSelectedId = null;
 var treeViewQuestionsOnly = false;
+var treeViewLinking = null; // { sourceId, optionIndex } while picking a target for an answer
+var treeViewMenuEl = null;
+var treeViewBannerEl = null;
+var newPayloadDropOffset = 0;
 
 function getCurrentPayloadId() {
   return state.currentPayload && state.currentPayload.id ? state.currentPayload.id : state.currentNodeId;
@@ -926,13 +930,15 @@ function openTreeView() {
 }
 
 function closeTreeView() {
+  cancelTreeViewLinking();
+  hideTreeViewContextMenu();
   els.treeViewOverlay.classList.add('hidden');
   treeViewSelectedId = null;
   treeViewQuestionsOnly = false;
   els.treeViewQuestionsOnlyBtn.style.backgroundColor = '';
   els.treeViewQuestionsOnlyBtn.style.borderColor = '';
   if (treeViewCy) {
-    treeViewCy.elements().removeClass('tree-selected tree-match tree-dim tree-path tree-path-current edge-path');
+    treeViewCy.elements().removeClass('tree-selected tree-match tree-dim tree-path tree-path-current edge-path tree-link-source');
   }
 }
 
@@ -958,24 +964,245 @@ function initTreeView() {
       { selector: 'node.tree-path-current', style: { 'background-color': '#f97316', 'border-color': '#fde68a', 'border-width': 6, 'overlay-color': '#fde68a', 'overlay-padding': '10px', 'overlay-opacity': 0.2, 'shadow-color': '#f97316', 'shadow-opacity': 0.72, 'shadow-blur': 34 } },
       { selector: 'node.tree-match', style: { 'overlay-color': '#fcd34d', 'overlay-padding': '6px', 'overlay-opacity': 0.18 } },
       { selector: 'node.tree-dim', style: { 'opacity': 0.2 } },
+      { selector: 'node.tree-link-source', style: { 'border-color': '#38bdf8', 'border-width': 5, 'border-style': 'dashed', 'overlay-color': '#38bdf8', 'overlay-padding': '8px', 'overlay-opacity': 0.16 } },
       { selector: 'edge', style: { 'curve-style': 'bezier', 'target-arrow-shape': 'triangle', 'target-arrow-color': '#94a3b8', 'line-color': '#64748b', 'opacity': 0.85, 'width': 2, 'label': 'data(label)', 'font-size': 11, 'text-rotation': 'autorotate', 'text-margin-y': -10, 'color': '#e2e8f0', 'text-background-color': '#111827', 'text-background-opacity': 0.88, 'text-background-shape': 'roundrectangle', 'text-border-color': '#1e293b', 'text-border-width': 1, 'text-border-opacity': 0.85 } },
       { selector: 'edge.edge-path', style: { 'line-color': '#f59e0b', 'target-arrow-color': '#f59e0b', 'width': 4, 'opacity': 1, 'color': '#fde68a', 'text-background-color': '#78350f', 'text-background-opacity': 0.96, 'text-border-color': '#f59e0b', 'text-border-width': 1.5 } }
     ]
   });
   treeViewCy.on('tap', 'node', function (event) {
+    hideTreeViewContextMenu();
     var nodeId = event.target.id();
+    if (treeViewLinking) {
+      completeTreeViewLink(nodeId);
+      return;
+    }
     selectTreeViewNode(nodeId);
     openPayloadEditorForId(nodeId);
   });
   treeViewCy.on('tap', function (event) {
     if (event.target !== treeViewCy) return;
+    hideTreeViewContextMenu();
+    if (treeViewLinking) {
+      cancelTreeViewLinking();
+      return;
+    }
     clearTreeViewSelection();
     updateTreeViewDecisionPathHighlight();
   });
+  treeViewCy.on('cxttap', 'node', function (event) {
+    if (treeViewLinking) cancelTreeViewLinking();
+    showTreeViewNodeMenu(event.target.id(), event);
+  });
+  treeViewCy.on('cxttap', 'edge', function (event) {
+    if (treeViewLinking) cancelTreeViewLinking();
+    showTreeViewEdgeMenu(event.target.id(), event);
+  });
+  treeViewCy.on('pan zoom', function () { hideTreeViewContextMenu(); });
+  els.treeViewCanvas.addEventListener('contextmenu', function (event) { event.preventDefault(); });
   treeViewCy.on('dragfree', 'node', function () {
     persistTreeViewPositions({ message: 'Tree layout moved. Save tree.json to persist.' });
     refreshMiniTreeView();
     updateTreeViewDecisionPathHighlight();
+  });
+}
+
+// --- Visual answer linking (right-click a node or edge to rewire options) ---
+
+function isTreeViewLinking() { return !!treeViewLinking; }
+
+function ensureTreeViewChrome() {
+  if (!treeViewMenuEl) {
+    treeViewMenuEl = document.createElement('div');
+    treeViewMenuEl.className = 'tree-view-context-menu hidden';
+    els.treeViewCanvas.parentElement.appendChild(treeViewMenuEl);
+  }
+  if (!treeViewBannerEl) {
+    treeViewBannerEl = document.createElement('div');
+    treeViewBannerEl.className = 'tree-view-link-banner hidden';
+    els.treeViewCanvas.parentElement.appendChild(treeViewBannerEl);
+  }
+}
+
+function hideTreeViewContextMenu() {
+  if (treeViewMenuEl) treeViewMenuEl.classList.add('hidden');
+}
+
+function positionTreeViewContextMenu(event) {
+  var canvasRect = els.treeViewCanvas.getBoundingClientRect();
+  var parentRect = els.treeViewCanvas.parentElement.getBoundingClientRect();
+  var clientX = event.originalEvent ? event.originalEvent.clientX : canvasRect.left;
+  var clientY = event.originalEvent ? event.originalEvent.clientY : canvasRect.top;
+  var x = clientX - parentRect.left;
+  var y = clientY - parentRect.top;
+  treeViewMenuEl.style.left = '0px';
+  treeViewMenuEl.style.top = '0px';
+  treeViewMenuEl.classList.remove('hidden');
+  var menuRect = treeViewMenuEl.getBoundingClientRect();
+  x = Math.min(x, parentRect.width - menuRect.width - 12);
+  y = Math.min(y, parentRect.height - menuRect.height - 12);
+  treeViewMenuEl.style.left = Math.max(6, x) + 'px';
+  treeViewMenuEl.style.top = Math.max(6, y) + 'px';
+}
+
+function menuItemButton(label, handler, danger) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'tree-view-menu-item' + (danger ? ' danger' : '');
+  btn.innerHTML = label;
+  btn.addEventListener('click', function () {
+    hideTreeViewContextMenu();
+    handler();
+  });
+  return btn;
+}
+
+function describeOptionTarget(option) {
+  var next = String(option && option.next || '').trim();
+  if (!next) return '<span class="menu-target unset">no target yet</span>';
+  return '<span class="menu-target">' + escapeHtml(next) + '</span>';
+}
+
+function showTreeViewNodeMenu(payloadId, event) {
+  if (!state.tree) return;
+  ensureTreeViewChrome();
+  treeViewMenuEl.innerHTML = '';
+  var heading = document.createElement('div');
+  heading.className = 'tree-view-menu-heading';
+  var node = state.tree.nodes[payloadId];
+  heading.textContent = payloadId;
+  treeViewMenuEl.appendChild(heading);
+  treeViewMenuEl.appendChild(menuItemButton('Open in editor', function () { selectTreeViewNode(payloadId); openPayloadEditorForId(payloadId); }));
+  if (node) {
+    (node.options || []).forEach(function (option, index) {
+      var label = String(option && option.label || '').trim() || ('Option ' + (index + 1));
+      treeViewMenuEl.appendChild(menuItemButton(
+        'Link answer <strong>' + escapeHtml(label) + '</strong> &rarr; ' + describeOptionTarget(option),
+        function () { startTreeViewLinking(payloadId, index); }
+      ));
+    });
+    treeViewMenuEl.appendChild(menuItemButton('&#43; Add answer option&hellip;', function () { addOptionAndLink(payloadId); }));
+  }
+  positionTreeViewContextMenu(event);
+}
+
+function showTreeViewEdgeMenu(edgeId, event) {
+  if (!state.tree) return;
+  var parts = String(edgeId).split('__');
+  var optionIndex = Number(parts.pop());
+  var nodeId = parts.join('__');
+  var node = state.tree.nodes[nodeId];
+  var option = node && Array.isArray(node.options) ? node.options[optionIndex] : null;
+  if (!option) return;
+  ensureTreeViewChrome();
+  treeViewMenuEl.innerHTML = '';
+  var heading = document.createElement('div');
+  heading.className = 'tree-view-menu-heading';
+  var label = String(option.label || '').trim() || ('Option ' + (optionIndex + 1));
+  heading.textContent = nodeId + ' — ' + label;
+  treeViewMenuEl.appendChild(heading);
+  treeViewMenuEl.appendChild(menuItemButton('Retarget this answer&hellip;', function () { startTreeViewLinking(nodeId, optionIndex); }));
+  treeViewMenuEl.appendChild(menuItemButton('Remove this answer option', function () { removeNodeOption(nodeId, optionIndex); }, true));
+  positionTreeViewContextMenu(event);
+}
+
+function startTreeViewLinking(sourceId, optionIndex) {
+  if (!state.tree || !treeViewCy) return;
+  var node = state.tree.nodes[sourceId];
+  var option = node && Array.isArray(node.options) ? node.options[optionIndex] : null;
+  if (!option) return;
+  ensureTreeViewChrome();
+  treeViewLinking = { sourceId: sourceId, optionIndex: optionIndex };
+  treeViewCy.nodes().removeClass('tree-link-source');
+  treeViewCy.getElementById(sourceId).addClass('tree-link-source');
+  els.treeViewCanvas.classList.add('linking');
+  var label = String(option.label || '').trim() || ('Option ' + (optionIndex + 1));
+  treeViewBannerEl.innerHTML = 'Click the node this answer should lead to: <strong>' + escapeHtml(sourceId) + '</strong> &rarr; answer <strong>' + escapeHtml(label) + '</strong> &rarr; ? &nbsp;<span class="banner-hint">(Esc or click empty space to cancel)</span>';
+  treeViewBannerEl.classList.remove('hidden');
+}
+
+function cancelTreeViewLinking() {
+  if (!treeViewLinking) return false;
+  treeViewLinking = null;
+  if (treeViewCy) treeViewCy.nodes().removeClass('tree-link-source');
+  els.treeViewCanvas.classList.remove('linking');
+  if (treeViewBannerEl) treeViewBannerEl.classList.add('hidden');
+  return true;
+}
+
+function completeTreeViewLink(targetId) {
+  if (!treeViewLinking || !state.tree) return;
+  var linking = treeViewLinking;
+  var node = state.tree.nodes[linking.sourceId];
+  var option = node && Array.isArray(node.options) ? node.options[linking.optionIndex] : null;
+  if (!option) { cancelTreeViewLinking(); return; }
+  if (targetId === linking.sourceId) {
+    treeViewBannerEl.innerHTML = 'An answer cannot point back at its own question. Pick a different node, or press Esc to cancel.';
+    return;
+  }
+  var previousTarget = String(option.next || '').trim() || null;
+  option.next = targetId;
+  appendChangeLog({ type: 'optionRetargeted', payloadType: 'node', payloadId: node.id, optionIndex: linking.optionIndex, optionLabel: option.label || '', previousTarget: previousTarget, newTarget: targetId });
+  cancelTreeViewLinking();
+  rebuildTreeViewEdgesForNode(node.id);
+  updateTreeViewOrphanClasses();
+  refreshMiniTreeView();
+  refreshTablesViewIfOpen();
+  if (state.currentMode === 'node' && state.currentNodeId === node.id) renderNode();
+  updateEditorDirtyState();
+  var label = String(option.label || '').trim() || ('Option ' + (linking.optionIndex + 1));
+  setSaveStatus("Linked " + node.id + " — '" + label + "' → " + targetId + '. Save tree.json to persist.');
+}
+
+function addOptionAndLink(nodeId) {
+  var node = state.tree && state.tree.nodes[nodeId];
+  if (!node) return;
+  var label = String(prompt('Label for the new answer (e.g. Yes):', '') || '').trim();
+  if (!label) return;
+  if (!Array.isArray(node.options)) node.options = [];
+  node.options.push({ label: label, next: '' });
+  appendChangeLog({ type: 'optionAdded', payloadType: 'node', payloadId: nodeId, optionLabel: label });
+  refreshTablesViewIfOpen();
+  if (state.currentMode === 'node' && state.currentNodeId === nodeId) renderNode();
+  updateEditorDirtyState();
+  startTreeViewLinking(nodeId, node.options.length - 1);
+}
+
+function removeNodeOption(nodeId, optionIndex) {
+  var node = state.tree && state.tree.nodes[nodeId];
+  if (!node || !Array.isArray(node.options) || !node.options[optionIndex]) return;
+  var option = node.options[optionIndex];
+  var label = String(option.label || '').trim() || ('Option ' + (optionIndex + 1));
+  if (!confirm("Remove answer '" + label + "' from " + nodeId + '? This updates the live tree only until you save tree.json.')) return;
+  node.options.splice(optionIndex, 1);
+  appendChangeLog({ type: 'optionRemoved', payloadType: 'node', payloadId: nodeId, optionLabel: option.label || '', previousTarget: option.next || null });
+  rebuildTreeViewEdgesForNode(nodeId);
+  updateTreeViewOrphanClasses();
+  refreshMiniTreeView();
+  refreshTablesViewIfOpen();
+  if (state.currentMode === 'node' && state.currentNodeId === nodeId) renderNode();
+  updateEditorDirtyState();
+  setSaveStatus("Removed answer '" + label + "' from " + nodeId + '. Save tree.json to persist.');
+}
+
+function rebuildTreeViewEdgesForNode(nodeId) {
+  if (!treeViewCy || !state.tree) return;
+  treeViewCy.edges('[source = "' + nodeId + '"]').remove();
+  var node = state.tree.nodes[nodeId];
+  if (!node) return;
+  (node.options || []).forEach(function (option, index) {
+    if (!option || !option.next || (!state.tree.nodes[option.next] && !state.tree.results[option.next])) return;
+    treeViewCy.add({ group: 'edges', data: { id: nodeId + '__' + index, source: nodeId, target: option.next, label: option.label || '' } });
+  });
+  updateTreeViewDecisionPathHighlight();
+}
+
+function updateTreeViewOrphanClasses() {
+  if (!treeViewCy || !state.tree) return;
+  var orphanLookup = {};
+  getOrphanNodeIds(state.tree).forEach(function (id) { orphanLookup[id] = true; });
+  treeViewCy.nodes().forEach(function (cyNode) {
+    cyNode.toggleClass('orphan', !!orphanLookup[cyNode.id()]);
+    cyNode.data('orphan', !!orphanLookup[cyNode.id()]);
   });
 }
 
@@ -1025,6 +1252,30 @@ function buildTreeViewElements() {
     });
   });
   return elements;
+}
+
+function getSuggestedNewPayloadPosition() {
+  // Drop new payloads somewhere visible instead of at the canvas origin,
+  // staggering repeated creations so they don't stack on top of each other.
+  if (!state.tree) return null;
+  newPayloadDropOffset = (newPayloadDropOffset + 48) % 240;
+  if (treeViewCy) {
+    var extent = treeViewCy.extent();
+    return {
+      x: Math.round(extent.x1 + (extent.w / 2) + newPayloadDropOffset),
+      y: Math.round(extent.y1 + (extent.h / 2) + newPayloadDropOffset)
+    };
+  }
+  var stored = getStoredTreePositions(state.tree);
+  var ids = Object.keys(stored);
+  if (!ids.length) return null;
+  var sumX = 0;
+  var maxY = -Infinity;
+  ids.forEach(function (id) {
+    sumX += stored[id].x;
+    if (stored[id].y > maxY) maxY = stored[id].y;
+  });
+  return { x: Math.round(sumX / ids.length) + newPayloadDropOffset, y: Math.round(maxY + 140) };
 }
 
 function getStoredTreePositions(tree) {
@@ -1400,6 +1651,10 @@ function refreshTablesViewIfOpen() {
 }
 
 // ===== modules/editor.js =====
+// Circular imports resolved via ES module live bindings.
+
+
+
 var pendingValidationProceed = null;
 var pendingValidationCancel = null;
 
@@ -1789,7 +2044,7 @@ function buildOptionRow(scope, option, index, total) {
     '</div></div>' +
     '<div class="editor-row-grid">' +
     '<div class="editor-field"><label>Label</label><input data-scope="' + scope + '" data-option-field="label" data-index="' + index + '" type="text" value="' + escapeAttr(option && option.label || '') + '" /></div>' +
-    '<div class="editor-field"><label>Next target</label>' + buildTargetSelect(scope, index, option && option.next || '') + '<div class="editor-help">Question nodes and results are both listed.</div></div>' +
+    '<div class="editor-field"><label>Next target</label>' + buildTargetSelect(scope, index, option && option.next || '') + '<div class="editor-help">Question nodes and results are both listed. Leave unset to wire it up later in the tree map (right-click the node).</div></div>' +
     '<div class="editor-field"><label>Risk score</label><input data-scope="' + scope + '" data-option-field="riskScore" data-index="' + index + '" type="number" step="1" value="' + escapeAttr(riskScore) + '" placeholder="0" /><div class="editor-help">Points added to cumulative risk when this answer is chosen.</div></div>' +
     '</div></div>';
 }
@@ -1968,15 +2223,10 @@ function renderValidationSummary(scope) {
   var warnings = getPayloadValidationWarnings(payload, mode, scope === 'create');
   if (state.tree) {
     try {
-      var previewTree = clone(state.tree);
-      if (scope === 'create') {
-        if (mode === 'node') previewTree.nodes[payload.id] = clone(payload);
-        else previewTree.results[payload.id] = clone(payload);
-      } else {
-        if (mode === 'node') previewTree.nodes[state.currentPayload.id] = clone(payload);
-        else previewTree.results[state.currentPayload.id] = clone(payload);
-      }
-      warnings = uniqueStrings(warnings.concat(getTreeValidationWarnings(previewTree) || []));
+      var previewTree = getPreviewTreeForPayload(scope, mode, payload);
+      var treeWarnings = getNewlyIntroducedTreeWarnings(previewTree);
+      if (scope === 'create') treeWarnings = filterUnwiredPayloadWarnings(treeWarnings, payload.id);
+      warnings = uniqueStrings(warnings.concat(treeWarnings));
     } catch (_err) {
       warnings = uniqueStrings(warnings);
     }
@@ -2027,13 +2277,15 @@ function getPayloadValidationWarnings(payload, mode, isCreate) {
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) return warnings;
   if (mode === 'node') {
     var options = Array.isArray(payload.options) ? payload.options : [];
-    if (!options.length) warnings.push("Node '" + (payload.id || 'new node') + "' has no options.");
+    // A brand-new node is expected to be unwired: no options / empty rows are
+    // fine at creation time and can be connected later from the tree map.
+    if (!options.length && !isCreate) warnings.push("Node '" + (payload.id || 'new node') + "' has no options.");
     options.forEach(function (option, index) {
       var label = String(option && option.label || '').trim();
       var next = String(option && option.next || '').trim();
-      if (!label && !next) { warnings.push('Option ' + (index + 1) + ' is empty.'); return; }
+      if (!label && !next) { if (!isCreate) warnings.push('Option ' + (index + 1) + ' is empty.'); return; }
       if (!label) warnings.push('Option ' + (index + 1) + ' is missing a label.');
-      if (!next) { warnings.push("Option '" + (label || ('Option ' + (index + 1))) + "' is missing a target."); return; }
+      if (!next) { if (!isCreate) warnings.push("Option '" + (label || ('Option ' + (index + 1))) + "' is missing a target."); return; }
       if (state.tree && !targetExists(next) && !(isCreate && next === payload.id)) {
         warnings.push("Option '" + (label || ('Option ' + (index + 1))) + "' points to missing target '" + next + "'.");
       }
@@ -2096,6 +2348,29 @@ function getPreviewTreeForPayload(scope, mode, payload) {
   return previewTree;
 }
 
+function getNewlyIntroducedTreeWarnings(previewTree) {
+  // Only surface warnings this change would add — pre-existing tree warnings
+  // (e.g. an orphan created earlier) should not nag on every unrelated apply.
+  var existing = {};
+  (getTreeValidationWarnings(state.tree) || []).forEach(function (message) { existing[message] = true; });
+  return (getTreeValidationWarnings(previewTree) || []).filter(function (message) { return !existing[message]; });
+}
+
+function filterUnwiredPayloadWarnings(warnings, payloadId) {
+  // A freshly created node has no incoming links or wired options yet by
+  // definition; suppress those warnings so creation is friction-free.
+  var unwired = [
+    "Orphan node '" + payloadId + "' has no incoming references.",
+    "Node '" + payloadId + "' has no options."
+  ];
+  return (warnings || []).filter(function (message) {
+    if (unwired.indexOf(message) !== -1) return false;
+    if (message.indexOf("Node '" + payloadId + "' has an empty option row") === 0) return false;
+    if (message.indexOf("Node '" + payloadId + "' option ") === 0 && message.indexOf('is missing a target') !== -1) return false;
+    return true;
+  });
+}
+
 function setEditorError(message) {
   els.editorMessage.textContent = message;
   els.editorMessage.className = 'footnote editor-message-top bad';
@@ -2125,7 +2400,7 @@ function finalizeAppliedPayloadEdit(edited, saveAfter, warnings) {
   refreshMiniTreeView();
   refreshTablesViewIfOpen();
   updateEditorDirtyState();
-  els.editorMessage.textContent = 'Edits applied to the live tree.' + (warnings && warnings.length ? ' ' + formatTreeValidationWarningSummary({ nodes: state.tree.nodes, results: state.tree.results, startNode: state.tree.startNode }) : '');
+  els.editorMessage.textContent = 'Edits applied to the live tree.' + (warnings && warnings.length ? ' ' + warnings.join(' ') : '');
   els.editorMessage.className = 'footnote editor-message-top good';
   setSaveStatus('Live tree updated. Save tree.json to persist.');
   if (saveAfter) saveTreeJson();
@@ -2133,11 +2408,22 @@ function finalizeAppliedPayloadEdit(edited, saveAfter, warnings) {
 
 function finalizeCreatedPayload(created, warnings, createMode) {
   var mode = createMode || state.createMode;
+  if (mode !== 'node' && mode !== 'result') {
+    console.error('Create failed: unknown payload mode', mode);
+    els.createPayloadMessage.textContent = 'Create failed: the editor lost track of whether this is a question or a result. Close and reopen the create panel.';
+    els.createPayloadMessage.className = 'footnote bad';
+    return;
+  }
+  if (typeof created.x !== 'number' || typeof created.y !== 'number') {
+    var suggested = getSuggestedNewPayloadPosition();
+    if (suggested) { created.x = suggested.x; created.y = suggested.y; }
+  }
   if (mode === 'node') state.tree.nodes[created.id] = created; else state.tree.results[created.id] = created;
   appendChangeLog({ type: 'payloadCreated', payloadType: mode, payloadId: created.id });
-  els.createPayloadMessage.textContent = (mode === 'node' ? 'Question node ' : 'Result node ') + created.id + ' created.' + (warnings && warnings.length ? ' ' + formatTreeValidationWarningSummary(state.tree) : '');
+  var hint = mode === 'node' ? ' Wire its answers from the tree map: right-click the node to link options to targets.' : '';
+  els.createPayloadMessage.textContent = (mode === 'node' ? 'Question node ' : 'Result node ') + created.id + ' created.' + hint + (warnings && warnings.length ? ' ' + warnings.join(' ') : '');
   els.createPayloadMessage.className = 'footnote good';
-  state.createDraft = buildCreateDraft(state.createMode);
+  state.createDraft = buildCreateDraft(mode);
   state.createDraftBaseline = clone(state.createDraft);
   renderPayloadForm('create');
   if (state.currentPayload) {
@@ -2159,7 +2445,7 @@ function applyCurrentPayloadEdits(saveAfter) {
     var errors = getPayloadValidationErrors(edited, state.currentMode, false);
     if (errors.length) throw new Error(errors[0]);
     var previewTree = getPreviewTreeForPayload('edit', state.currentMode, edited);
-    var warnings = uniqueStrings(getPayloadValidationWarnings(edited, state.currentMode, false).concat(getTreeValidationWarnings(previewTree)));
+    var warnings = uniqueStrings(getPayloadValidationWarnings(edited, state.currentMode, false).concat(getNewlyIntroducedTreeWarnings(previewTree)));
     var proceed = function () { finalizeAppliedPayloadEdit(edited, saveAfter, warnings); };
     if (warnings.length) {
       openValidationWarningModal({ title: 'Apply changes with warnings?', message: 'These changes may break the tree. You can cancel and fix them first, or proceed anyway.', warnings: warnings, onProceed: proceed });
@@ -2292,10 +2578,17 @@ function createPayloadFromDraft() {
   try {
     syncScopeDraftFromForm('create');
     var created = clone(state.createDraft);
+    if (state.createMode === 'node') {
+      // Placeholder rows the user never filled in are dropped rather than
+      // saved as blank options; targets can be wired later in the tree map.
+      created.options = (Array.isArray(created.options) ? created.options : []).filter(function (option) {
+        return String(option && option.label || '').trim() || String(option && option.next || '').trim();
+      });
+    }
     var errors = getPayloadValidationErrors(created, state.createMode, true);
     if (errors.length) throw new Error(errors[0]);
     var previewTree = getPreviewTreeForPayload('create', state.createMode, created);
-    var warnings = uniqueStrings(getPayloadValidationWarnings(created, state.createMode, true).concat(getTreeValidationWarnings(previewTree)));
+    var warnings = uniqueStrings(getPayloadValidationWarnings(created, state.createMode, true).concat(filterUnwiredPayloadWarnings(getNewlyIntroducedTreeWarnings(previewTree), created.id)));
     var capturedCreateMode = state.createMode;
     var proceed = function () { finalizeCreatedPayload(created, warnings, capturedCreateMode); };
     if (warnings.length) {
@@ -2879,7 +3172,12 @@ function bindEvents() {
       if (els.iconPickerOverlay && !els.iconPickerOverlay.classList.contains('hidden')) { closeIconPicker(); return; }
       if (els.validationWarningOverlay && !els.validationWarningOverlay.classList.contains('hidden')) { cancelValidationWarningModal(); return; }
       if (!els.editorModalOverlay.classList.contains('hidden')) { closeEditor(); return; }
-      if (!els.treeViewOverlay.classList.contains('hidden')) { closeTreeView(); return; }
+      if (!els.treeViewOverlay.classList.contains('hidden')) {
+        hideTreeViewContextMenu();
+        if (cancelTreeViewLinking()) return;
+        closeTreeView();
+        return;
+      }
       if (els.sessionsModalOverlay && !els.sessionsModalOverlay.classList.contains('hidden')) { closeSessionsModal(); return; }
       if (els.schemaModalOverlay && !els.schemaModalOverlay.classList.contains('hidden')) { closeSchemaModal(); return; }
     }
@@ -2905,6 +3203,7 @@ function bindEvents() {
       openTreeView();
     }
   });
+  els.supersedesSessionInput.addEventListener('input', function () { state.supersedesSessionId = els.supersedesSessionInput.value.trim(); });
   if (els.newSessionIdBtn) els.newSessionIdBtn.addEventListener('click', function () {
     state.sessionId = generateSessionId();
     els.sessionIdInput.value = state.sessionId;
@@ -2916,7 +3215,6 @@ function bindEvents() {
     els.supersedesSessionInput.value = '';
     state.supersedesSessionId = '';
   });
-  els.supersedesSessionInput.addEventListener('input', function () { state.supersedesSessionId = els.supersedesSessionInput.value.trim(); });
   els.treeViewCloseBtn.addEventListener('click', closeTreeView);
   els.treeViewOverlay.addEventListener('click', function (e) { if (e.target === els.treeViewOverlay) closeTreeView(); });
   els.treeViewCreateQuestionBtn.addEventListener('click', function () { openTreeViewCreatePayloadPanel('node'); });

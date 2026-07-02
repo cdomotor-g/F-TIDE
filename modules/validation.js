@@ -73,14 +73,14 @@ export function validateSingleNode(node) {
   if (!node.id) throw new Error("Each node must have an 'id'.");
   if (!String(node.question || '').trim()) throw new Error("Node '" + node.id + "' is missing 'question'.");
   if (!Array.isArray(node.options)) throw new Error("Node '" + node.id + "' is missing 'options' array.");
-  if (node.options.length === 0) throw new Error("Node '" + node.id + "' must have at least one option.");
+  // Empty options arrays and blank labels/targets are allowed here so a node
+  // can be created first and wired up later — they surface as warnings via
+  // getTreeValidationWarnings instead of blocking the tree from loading.
   var seenLabels = new Set();
   node.options.forEach(function (option, idx) {
     if (!option || typeof option !== 'object' || Array.isArray(option)) throw new Error("Node '" + node.id + "' option " + (idx + 1) + ' must be an object.');
     var label = String(option.label || '').trim();
-    var next = String(option.next || '').trim();
-    if (!label) throw new Error("Node '" + node.id + "' option " + (idx + 1) + " is missing 'label'.");
-    if (!next) throw new Error("Node '" + node.id + "' option '" + label + "' is missing 'next'.");
+    if (!label) return;
     if (seenLabels.has(label.toLowerCase())) throw new Error("Node '" + node.id + "' has duplicate option label '" + label + "'.");
     seenLabels.add(label.toLowerCase());
   });
@@ -117,13 +117,9 @@ export function validateTree(tree) {
     if (seenIds.has(result.id)) throw new Error("Duplicate payload id '" + result.id + "'.");
     seenIds.add(result.id);
   });
-  Object.values(tree.nodes).forEach(function (node) {
-    node.options.forEach(function (option) {
-      if (!tree.nodes[option.next] && !tree.results[option.next]) {
-        throw new Error("Node '" + node.id + "' option '" + option.label + "' points to missing target '" + option.next + "'.");
-      }
-    });
-  });
+  // Options with blank or dangling targets are reported as warnings by
+  // getTreeValidationWarnings; the runner falls back to a missing-rule result
+  // at runtime, so they must not prevent the tree from loading.
   return getTreeValidationWarnings(tree);
 }
 
