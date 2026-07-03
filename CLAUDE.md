@@ -41,6 +41,7 @@ FWIN-ONSM-Matrix is a single-page browser app for running structured infrastruct
 | `editor.js` | In-browser node/result editor — guided form and raw JSON tab, create/delete/rename payloads |
 | `tree-view.js` | Cytoscape.js visual tree map (loaded from CDN in `index.html`), mini-tree sidebar, tables view, right-click answer linking (context menu + link mode) |
 | `validation.js` | Tree structure validation — called on load and before applying edits |
+| `stations.js` | FReD.csv loading + CSV parser, the station-search modal, and populating the session-details station fields (Type/State/LGA/Owner/HUB/Assessment Report) |
 | `utils.js` | Pure helpers: `clone`, `escapeHtml`, `escapeAttr`, `slugify`, `downloadFile`, etc. |
 
 **Circular imports:** `runner.js`, `editor.js`, `tree-view.js`, and `file-ops.js` import from each other. This is intentional and resolved via ES module live bindings — functions are only called at runtime after all modules have evaluated.
