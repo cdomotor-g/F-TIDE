@@ -4,7 +4,7 @@ import { setSaveStatus, updateButtons, renderCurrentPayloadJson, renderOptionTar
 import { setEditorMode, openCurrentPayloadEditor, closeEditor, openCreatePayloadPanel, closeCreatePayloadPanel, createPayloadFromDraft, openTreeViewCreatePayloadPanel, handlePayloadFormInput, handlePayloadFormClick, deleteCurrentPayload, renameCurrentPayloadId, applyCurrentPayloadEdits, closeIconPicker, chooseIconForScope, cancelValidationWarningModal, proceedValidationWarningModal } from './modules/editor.js';
 import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView, cancelTreeViewLinking, hideTreeViewContextMenu } from './modules/tree-view.js';
 import { handleJsonFileSelected, saveTreeJson, forkCurrentTreeBranch, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile, generateSessionId } from './modules/file-ops.js';
-import { handleFredFileSelected, openFredFilePicker, handleStationNumberFocus, openStationSearchModal, closeStationSearchModal, renderStationResults, handleStationResultsClick, clearStationDetails } from './modules/stations.js';
+import { handleFredFileSelected, openFredFilePicker, handleStationNumberFocus, handleStationNumberActivate, openStationSearchModal, closeStationSearchModal, renderStationResults, handleStationResultsClick, clearStationDetails } from './modules/stations.js';
 
 init();
 
@@ -119,7 +119,10 @@ function bindEvents() {
   });
   if (els.loadFredBtn) els.loadFredBtn.addEventListener('click', openFredFilePicker);
   if (els.fredFileInput) els.fredFileInput.addEventListener('change', handleFredFileSelected);
-  if (els.stationNumberInput) els.stationNumberInput.addEventListener('focus', handleStationNumberFocus);
+  if (els.stationNumberInput) {
+    els.stationNumberInput.addEventListener('focus', handleStationNumberFocus);
+    els.stationNumberInput.addEventListener('mousedown', handleStationNumberActivate);
+  }
   if (els.stationSearchCloseBtn) els.stationSearchCloseBtn.addEventListener('click', closeStationSearchModal);
   if (els.stationSearchInput) els.stationSearchInput.addEventListener('input', function () { renderStationResults(els.stationSearchInput.value); });
   if (els.stationSearchResults) els.stationSearchResults.addEventListener('click', handleStationResultsClick);
