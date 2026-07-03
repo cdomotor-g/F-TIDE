@@ -40,14 +40,23 @@
         <div id="sessionMetaCard" class="card hidden">
           <div class="card-header">
             <p class="card-title" style="margin:0;">Session details</p>
+            <button class="btn-small" id="loadFredBtn" type="button">Load FReD</button>
+            <span id="fredStatus" class="footnote"></span>
             <button class="btn-small" id="newSessionIdBtn" type="button">New</button>
             <button class="btn-small" id="clearSessionMetaBtn" type="button">Clear</button>
             <button class="btn-small" id="sessionsBtn" type="button">Sessions</button>
           </div>
+          <input class="file-input" id="fredFileInput" type="file" accept=".csv,text/csv" />
           <div class="meta-grid">
             <div class="meta-field"><label for="assessorInitialsInput">Assessor initials</label><input id="assessorInitialsInput" class="input" type="text" maxlength="20" placeholder="e.g. HS,AS,DW,RD,RH" /></div>
-            <div class="meta-field"><label for="stationNumberInput">Station number</label><input id="stationNumberInput" class="input" type="text" maxlength="50" placeholder="e.g. 123456A" /></div>
+            <div class="meta-field"><label for="stationNumberInput">Station number</label><input id="stationNumberInput" class="input" type="text" maxlength="50" placeholder="Focus to search FReD" autocomplete="off" /></div>
             <div class="meta-field"><label for="stationNameInput">Station name</label><input id="stationNameInput" class="input" type="text" maxlength="120" placeholder="e.g. Burnett at XYZ" /></div>
+            <div class="meta-field"><label for="stationTypeInput">Type</label><input id="stationTypeInput" class="input" type="text" maxlength="120" placeholder="Location type" /></div>
+            <div class="meta-field"><label for="stationStateInput">State</label><input id="stationStateInput" class="input" type="text" maxlength="60" placeholder="State" /></div>
+            <div class="meta-field"><label for="stationLgaInput">LGA</label><input id="stationLgaInput" class="input" type="text" maxlength="120" placeholder="LGA" /></div>
+            <div class="meta-field"><label for="stationOwnerInput">Owner</label><input id="stationOwnerInput" class="input" type="text" maxlength="160" placeholder="Station owner" /></div>
+            <div class="meta-field"><label for="stationHubInput">HUB</label><input id="stationHubInput" class="input" type="text" maxlength="60" placeholder="Hub" /></div>
+            <div class="meta-field"><label for="assessmentReportDisplay">Assessment Report</label><div id="assessmentReportDisplay" class="assessment-report-display">-</div></div>
             <div class="meta-field"><label for="sessionIdInput">Session ID</label><input id="sessionIdInput" class="input" type="text" readonly /></div>
             <div class="meta-field"><label for="supersedesSessionInput">Supersedes session</label><input id="supersedesSessionInput" class="input" type="text" list="previousSessionIds" placeholder="Optional previous session ID or type new one" /></div>
           </div>
@@ -269,6 +278,19 @@
       </div>
       <p id="sessionsModalMessage" class="footnote" style="min-height:1.4em; margin: 4px 0 12px;"></p>
       <div id="sessionsListContainer"></div>
+    </div>
+  </div>
+
+  <div id="stationSearchOverlay" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 760px;" role="dialog" aria-modal="true" aria-labelledby="stationSearchTitle">
+      <div class="modal-header">
+        <h2 id="stationSearchTitle" style="margin:0;">Find station</h2>
+        <button class="btn-small" id="stationSearchCloseBtn" type="button">Close</button>
+      </div>
+      <p class="footnote" id="stationSearchMeta" style="margin:0 0 10px 0;"></p>
+      <input id="stationSearchInput" class="input" type="search" placeholder="Search by station number or name" autocomplete="off" />
+      <div id="stationSearchResults" class="station-search-results"></div>
+      <p id="stationSearchEmpty" class="empty">No stations loaded.</p>
     </div>
   </div>
 

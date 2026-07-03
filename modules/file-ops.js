@@ -6,6 +6,7 @@ import { validateTree, formatTreeValidationWarningSummary } from './validation.j
 import { setSaveStatus, clearMissingRuleForm, hideResultView, renderNode, renderResult } from './runner.js';
 import { updateEditorDirtyState } from './editor.js';
 import { buildTreeTablesHtml } from './tree-view.js';
+import { renderAssessmentReport } from './stations.js';
 
 export function handleJsonFileSelected(event) {
   var file = event.target.files && event.target.files[0];
@@ -193,7 +194,18 @@ export function exportReport() {
   }
   saveCurrentSession();
   var now = new Date();
-  var reportHtml = buildReportHtml({ generatedAt: now, assessorInitials: els.assessorInitialsInput.value.trim(), stationNumber: els.stationNumberInput.value.trim(), stationName: els.stationNameInput.value.trim() });
+  var reportHtml = buildReportHtml({
+    generatedAt: now,
+    assessorInitials: els.assessorInitialsInput.value.trim(),
+    stationNumber: els.stationNumberInput.value.trim(),
+    stationName: els.stationNameInput.value.trim(),
+    type: els.stationTypeInput.value.trim(),
+    state: els.stationStateInput.value.trim(),
+    lga: els.stationLgaInput.value.trim(),
+    owner: els.stationOwnerInput.value.trim(),
+    hub: els.stationHubInput.value.trim(),
+    assessmentReport: state.assessmentReport || { url: '', label: '', raw: '' }
+  });
   var fileStem = slugify(
     (els.stationNumberInput.value.trim() || 'station') + '_' +
     (els.stationNameInput.value.trim() || 'site') + '_' +
@@ -218,6 +230,12 @@ export function saveCurrentSession() {
     stationNumber: els.stationNumberInput.value.trim(),
     stationName: els.stationNameInput.value.trim(),
     assessorInitials: els.assessorInitialsInput.value.trim(),
+    stationType: els.stationTypeInput.value.trim(),
+    stationState: els.stationStateInput.value.trim(),
+    lga: els.stationLgaInput.value.trim(),
+    owner: els.stationOwnerInput.value.trim(),
+    hub: els.stationHubInput.value.trim(),
+    assessmentReport: state.assessmentReport || { url: '', label: '', raw: '' },
     path: state.history.map(function (step, index) { return { step: index + 1, nodeId: step.nodeId, question: step.question, answer: step.answer, comment: step.comment, next: step.next, icon: step.icon }; }),
     currentNodeId: state.currentNodeId,
     currentMode: state.currentMode,
@@ -346,6 +364,13 @@ export function loadSession(session) {
   if (els.assessorInitialsInput) els.assessorInitialsInput.value = session.assessorInitials || '';
   if (els.stationNumberInput) els.stationNumberInput.value = session.stationNumber || '';
   if (els.stationNameInput) els.stationNameInput.value = session.stationName || '';
+  if (els.stationTypeInput) els.stationTypeInput.value = session.stationType || '';
+  if (els.stationStateInput) els.stationStateInput.value = session.stationState || '';
+  if (els.stationLgaInput) els.stationLgaInput.value = session.lga || '';
+  if (els.stationOwnerInput) els.stationOwnerInput.value = session.owner || '';
+  if (els.stationHubInput) els.stationHubInput.value = session.hub || '';
+  state.assessmentReport = session.assessmentReport || { url: '', label: '', raw: '' };
+  renderAssessmentReport();
   renderSessionMetadata();
   state.history = (session.path || []).map(function (step) {
     return { nodeId: step.nodeId, question: step.question, answer: step.answer, next: step.next, icon: step.icon || DEFAULT_ICON, comment: step.comment || '' };
@@ -400,6 +425,15 @@ export function handleImportSessionsFile(event) {
 export function buildReportHtml(meta) {
   var dateText = meta.generatedAt.toLocaleString();
   var supersedesText = state.supersedesSessionId ? escapeHtml(state.supersedesSessionId) : '-';
+  var assessmentReport = meta.assessmentReport || { url: '', label: '', raw: '' };
+  var assessmentReportHtml;
+  if (assessmentReport.url) {
+    assessmentReportHtml = '<a href="' + escapeAttr(assessmentReport.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(assessmentReport.label || assessmentReport.url) + '</a>';
+  } else if (assessmentReport.label) {
+    assessmentReportHtml = escapeHtml(assessmentReport.label);
+  } else {
+    assessmentReportHtml = '-';
+  }
   var rows = state.history.map(function (step, index) {
     var answerHtml = escapeHtml(step.answer);
     if (state.tree && state.tree.nodes && state.tree.nodes[step.nodeId]) {
@@ -447,6 +481,12 @@ export function buildReportHtml(meta) {
     '<div><strong>Station name:</strong> ' + escapeHtml(meta.stationName) + '</div>' +
     '<div><strong>Assessor initials:</strong> ' + escapeHtml(meta.assessorInitials) + '</div>' +
     '<div><strong>Station number:</strong> ' + escapeHtml(meta.stationNumber) + '</div>' +
+    '<div><strong>Type:</strong> ' + escapeHtml(meta.type || '-') + '</div>' +
+    '<div><strong>State:</strong> ' + escapeHtml(meta.state || '-') + '</div>' +
+    '<div><strong>LGA:</strong> ' + escapeHtml(meta.lga || '-') + '</div>' +
+    '<div><strong>Owner:</strong> ' + escapeHtml(meta.owner || '-') + '</div>' +
+    '<div><strong>HUB:</strong> ' + escapeHtml(meta.hub || '-') + '</div>' +
+    '<div><strong>Assessment Report:</strong> ' + assessmentReportHtml + '</div>' +
     '<div><strong>Session ID:</strong> ' + escapeHtml(state.sessionId || '-') + '</div>' +
     '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
     '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +

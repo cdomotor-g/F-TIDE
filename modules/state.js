@@ -21,5 +21,9 @@ export var state = {
   iconPickerScope: null,
   editorSurfaceMode: 'edit',
   editorDraftBaseline: null,
-  createDraftBaseline: null
+  createDraftBaseline: null,
+  stationsData: [],
+  stationsFileName: '',
+  selectedStation: null,
+  assessmentReport: { url: '', label: '', raw: '' }
 };

@@ -17,6 +17,7 @@ const ORDER = [
   'modules/runner.js',
   'modules/tree-view.js',
   'modules/editor.js',
+  'modules/stations.js',
   'modules/file-ops.js',
   'app.js'
 ];

@@ -4,6 +4,7 @@ import { setSaveStatus, updateButtons, renderCurrentPayloadJson, renderOptionTar
 import { setEditorMode, openCurrentPayloadEditor, closeEditor, openCreatePayloadPanel, closeCreatePayloadPanel, createPayloadFromDraft, openTreeViewCreatePayloadPanel, handlePayloadFormInput, handlePayloadFormClick, deleteCurrentPayload, renameCurrentPayloadId, applyCurrentPayloadEdits, closeIconPicker, chooseIconForScope, cancelValidationWarningModal, proceedValidationWarningModal } from './modules/editor.js';
 import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView, cancelTreeViewLinking, hideTreeViewContextMenu } from './modules/tree-view.js';
 import { handleJsonFileSelected, saveTreeJson, forkCurrentTreeBranch, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile, generateSessionId } from './modules/file-ops.js';
+import { handleFredFileSelected, openFredFilePicker, handleStationNumberFocus, openStationSearchModal, closeStationSearchModal, renderStationResults, handleStationResultsClick, clearStationDetails } from './modules/stations.js';
 
 init();
 
@@ -68,6 +69,7 @@ function bindEvents() {
   els.editorModalOverlay.addEventListener('click', function (e) { if (e.target === els.editorModalOverlay) closeEditor(); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+      if (els.stationSearchOverlay && !els.stationSearchOverlay.classList.contains('hidden')) { closeStationSearchModal(); return; }
       if (els.iconPickerOverlay && !els.iconPickerOverlay.classList.contains('hidden')) { closeIconPicker(); return; }
       if (els.validationWarningOverlay && !els.validationWarningOverlay.classList.contains('hidden')) { cancelValidationWarningModal(); return; }
       if (!els.editorModalOverlay.classList.contains('hidden')) { closeEditor(); return; }
@@ -113,7 +115,15 @@ function bindEvents() {
     els.stationNameInput.value = '';
     els.supersedesSessionInput.value = '';
     state.supersedesSessionId = '';
+    clearStationDetails();
   });
+  if (els.loadFredBtn) els.loadFredBtn.addEventListener('click', openFredFilePicker);
+  if (els.fredFileInput) els.fredFileInput.addEventListener('change', handleFredFileSelected);
+  if (els.stationNumberInput) els.stationNumberInput.addEventListener('focus', handleStationNumberFocus);
+  if (els.stationSearchCloseBtn) els.stationSearchCloseBtn.addEventListener('click', closeStationSearchModal);
+  if (els.stationSearchInput) els.stationSearchInput.addEventListener('input', function () { renderStationResults(els.stationSearchInput.value); });
+  if (els.stationSearchResults) els.stationSearchResults.addEventListener('click', handleStationResultsClick);
+  if (els.stationSearchOverlay) els.stationSearchOverlay.addEventListener('click', function (e) { if (e.target === els.stationSearchOverlay) closeStationSearchModal(); });
   els.treeViewCloseBtn.addEventListener('click', closeTreeView);
   els.treeViewOverlay.addEventListener('click', function (e) { if (e.target === els.treeViewOverlay) closeTreeView(); });
   els.treeViewCreateQuestionBtn.addEventListener('click', function () { openTreeViewCreatePayloadPanel('node'); });
