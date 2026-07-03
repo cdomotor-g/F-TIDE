@@ -124,14 +124,24 @@ export function openFredFilePicker() {
   if (els.fredFileInput) els.fredFileInput.click();
 }
 
-// ---- Station number field focus -----------------------------------------
+// ---- Station number field interaction -----------------------------------
 export function handleStationNumberFocus() {
   if (Date.now() < stationFocusSuppressUntil) return;
   if (state.stationsData && state.stationsData.length) {
     openStationSearchModal();
-    return;
   }
-  // No FReD loaded yet: prompt the user to load it.
+  // When no FReD is loaded, the file picker is opened by handleStationNumberActivate
+  // instead: a file dialog can only be shown from a genuine user-activation event
+  // (pointer/click/keydown), and `focus` is not one of them.
+}
+
+// Opens the FReD file picker when the user points at the station-number field
+// before any station data has been loaded. Bound to a pointer event because
+// browsers block programmatic file-dialog opens that are not backed by a real
+// user gesture (which the `focus` event does not provide).
+export function handleStationNumberActivate() {
+  if (state.stationsData && state.stationsData.length) return;
+  if (Date.now() < stationFocusSuppressUntil) return;
   openFredFilePicker();
 }
 
