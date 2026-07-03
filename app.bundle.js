@@ -40,7 +40,10 @@ var state = {
   stationsData: [],
   stationsFileName: '',
   selectedStation: null,
-  assessmentReport: { url: '', label: '', raw: '' }
+  assessmentReport: { url: '', label: '', raw: '' },
+  // Clipboard/drag-drop image attached to the current session. Held in memory
+  // only (cleared when a new session begins); embedded into the export report.
+  sessionImage: null
 };
 
 // ===== modules/utils.js =====
@@ -205,6 +208,13 @@ var els = {
   pathTableBody: document.getElementById('pathTableBody'),
   emptyTrail: document.getElementById('emptyTrail'),
   exportReportBtn: document.getElementById('exportReportBtn'),
+  sessionImageCard: document.getElementById('sessionImageCard'),
+  sessionImagePill: document.getElementById('sessionImagePill'),
+  sessionImagePlaceholder: document.getElementById('sessionImagePlaceholder'),
+  sessionImagePreview: document.getElementById('sessionImagePreview'),
+  sessionImageFileInput: document.getElementById('sessionImageFileInput'),
+  sessionImageContextMenu: document.getElementById('sessionImageContextMenu'),
+  clearSessionImageBtn: document.getElementById('clearSessionImageBtn'),
   miniTreeCard: document.getElementById('miniTreeCard'),
   miniTreeCanvas: document.getElementById('miniTreeCanvas'),
   miniTreeCurrentPill: document.getElementById('miniTreeCurrentPill'),
@@ -2953,6 +2963,157 @@ function clearStationDetails() {
   renderAssessmentReport();
 }
 
+// ===== modules/session-image.js =====
+// Session image pill: lets the assessor attach a screenshot to the current
+// session by pasting from the clipboard, dropping a file, or choosing one via
+// the right-click menu. The image is kept in memory (state.sessionImage) until
+// a new session begins, and is embedded into the exported HTML report.
+
+function setSessionImage(dataUrl, name, type) {
+  if (!dataUrl) return;
+  state.sessionImage = { dataUrl: dataUrl, name: name || '', type: type || '' };
+  renderSessionImage();
+}
+
+function clearSessionImage() {
+  state.sessionImage = null;
+  renderSessionImage();
+}
+
+function renderSessionImage() {
+  var pill = els.sessionImagePill;
+  if (!pill) return;
+  var hasImage = !!(state.sessionImage && state.sessionImage.dataUrl);
+  if (els.sessionImagePreview) {
+    if (hasImage) {
+      els.sessionImagePreview.src = state.sessionImage.dataUrl;
+      els.sessionImagePreview.classList.remove('hidden');
+    } else {
+      els.sessionImagePreview.removeAttribute('src');
+      els.sessionImagePreview.classList.add('hidden');
+    }
+  }
+  if (els.sessionImagePlaceholder) els.sessionImagePlaceholder.classList.toggle('hidden', hasImage);
+  if (els.clearSessionImageBtn) els.clearSessionImageBtn.disabled = !hasImage;
+  pill.classList.toggle('has-image', hasImage);
+}
+
+// Reads a File/Blob into a data URL and stores it as the session image.
+function handleSessionImageFile(file) {
+  if (!file) return;
+  if (file.type && file.type.indexOf('image/') !== 0) {
+    alert('Please provide an image file (e.g. a screenshot).');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function (e) {
+    setSessionImage(e.target.result, file.name || 'clipboard-image', file.type || 'image/png');
+  };
+  reader.onerror = function () { alert('Could not read the image.'); };
+  reader.readAsDataURL(file);
+}
+
+function handleSessionImageFileInput(event) {
+  var file = event.target.files && event.target.files[0];
+  if (file) handleSessionImageFile(file);
+  // Reset so choosing the same file twice still fires a change event.
+  event.target.value = '';
+}
+
+// ---- Drag & drop ---------------------------------------------------------
+function handleSessionImageDragOver(event) {
+  event.preventDefault();
+  if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+  if (els.sessionImagePill) els.sessionImagePill.classList.add('dragover');
+}
+
+function handleSessionImageDragLeave(event) {
+  // Ignore leave events bubbling up from child nodes still inside the pill.
+  if (els.sessionImagePill && event.relatedTarget && els.sessionImagePill.contains(event.relatedTarget)) return;
+  if (els.sessionImagePill) els.sessionImagePill.classList.remove('dragover');
+}
+
+function handleSessionImageDrop(event) {
+  event.preventDefault();
+  if (els.sessionImagePill) els.sessionImagePill.classList.remove('dragover');
+  var dt = event.dataTransfer;
+  if (!dt) return;
+  if (dt.files && dt.files.length) { handleSessionImageFile(dt.files[0]); return; }
+  if (dt.items && dt.items.length) {
+    for (var i = 0; i < dt.items.length; i += 1) {
+      if (dt.items[i].kind === 'file') {
+        var f = dt.items[i].getAsFile();
+        if (f) { handleSessionImageFile(f); return; }
+      }
+    }
+  }
+}
+
+// ---- Paste ---------------------------------------------------------------
+// Native paste event fired when the pill is focused and the user presses Ctrl+V.
+function handleSessionImagePaste(event) {
+  var items = (event.clipboardData && event.clipboardData.items) || [];
+  for (var i = 0; i < items.length; i += 1) {
+    if (items[i].kind === 'file' && items[i].type.indexOf('image/') === 0) {
+      var file = items[i].getAsFile();
+      if (file) { event.preventDefault(); handleSessionImageFile(file); return; }
+    }
+  }
+}
+
+// Explicit "Paste from clipboard" action from the context menu, using the async
+// Clipboard API (needs a secure context and clipboard-read permission).
+async function pasteSessionImageFromClipboard() {
+  if (!navigator.clipboard || !navigator.clipboard.read) {
+    alert('Clipboard paste is not available in this browser.\nFocus the pill and press Ctrl+V, or use "Choose file to upload".');
+    return;
+  }
+  try {
+    var items = await navigator.clipboard.read();
+    for (var i = 0; i < items.length; i += 1) {
+      var imageType = (items[i].types || []).find(function (t) { return t.indexOf('image/') === 0; });
+      if (imageType) {
+        var blob = await items[i].getType(imageType);
+        handleSessionImageFile(blob);
+        return;
+      }
+    }
+    alert('No image found on the clipboard. Copy a screenshot first, then try again.');
+  } catch (err) {
+    alert('Could not read from the clipboard: ' + (err && err.message ? err.message : 'permission denied') + '.\nFocus the pill and press Ctrl+V instead.');
+  }
+}
+
+// ---- Right-click context menu -------------------------------------------
+function openSessionImageContextMenu(event) {
+  event.preventDefault();
+  var menu = els.sessionImageContextMenu;
+  if (!menu) return;
+  menu.classList.remove('hidden');
+  var menuWidth = menu.offsetWidth || 200;
+  var menuHeight = menu.offsetHeight || 90;
+  var x = Math.min(event.clientX, window.innerWidth - menuWidth - 8);
+  var y = Math.min(event.clientY, window.innerHeight - menuHeight - 8);
+  menu.style.left = Math.max(8, x) + 'px';
+  menu.style.top = Math.max(8, y) + 'px';
+}
+
+function hideSessionImageContextMenu() {
+  if (els.sessionImageContextMenu) els.sessionImageContextMenu.classList.add('hidden');
+}
+
+function handleSessionImageContextMenuClick(event) {
+  var btn = event.target.closest ? event.target.closest('button[data-action]') : null;
+  if (!btn) return;
+  var action = btn.getAttribute('data-action');
+  hideSessionImageContextMenu();
+  if (action === 'paste') {
+    pasteSessionImageFromClipboard();
+  } else if (action === 'upload') {
+    if (els.sessionImageFileInput) els.sessionImageFileInput.click();
+  }
+}
+
 // ===== modules/file-ops.js =====
 function handleJsonFileSelected(event) {
   var file = event.target.files && event.target.files[0];
@@ -3317,6 +3478,10 @@ function loadSession(session) {
   if (els.stationHubInput) els.stationHubInput.value = session.hub || '';
   state.assessmentReport = session.assessmentReport || { url: '', label: '', raw: '' };
   renderAssessmentReport();
+  // Session images are held in memory only, so a loaded session starts without
+  // one rather than inheriting the image from whatever was on screen before.
+  state.sessionImage = session.sessionImage || null;
+  renderSessionImage();
   renderSessionMetadata();
   state.history = (session.path || []).map(function (step) {
     return { nodeId: step.nodeId, question: step.question, answer: step.answer, next: step.next, icon: step.icon || DEFAULT_ICON, comment: step.comment || '' };
@@ -3371,6 +3536,11 @@ function handleImportSessionsFile(event) {
 function buildReportHtml(meta) {
   var dateText = meta.generatedAt.toLocaleString();
   var supersedesText = state.supersedesSessionId ? escapeHtml(state.supersedesSessionId) : '-';
+  var sessionImageBlock = '';
+  if (state.sessionImage && state.sessionImage.dataUrl) {
+    sessionImageBlock = '<div class="session-image"><strong>Session image:</strong>'
+      + '<div class="session-image-frame"><img src="' + escapeAttr(state.sessionImage.dataUrl) + '" alt="Session image" /></div></div>';
+  }
   var assessmentReport = meta.assessmentReport || { url: '', label: '', raw: '' };
   var assessmentReportHtml;
   if (assessmentReport.url) {
@@ -3436,7 +3606,7 @@ function buildReportHtml(meta) {
     '<div><strong>Session ID:</strong> ' + escapeHtml(state.sessionId || '-') + '</div>' +
     '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
     '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
-    '</div></section>' +
+    '</div>' + sessionImageBlock + '</section>' +
     '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Recommendation</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
     rationaleBlock + treeTablesBlock + '<p class="foot">Open this report in a browser and print to PDF.</p>' + '</body></html>';
 }
@@ -3444,6 +3614,8 @@ function buildReportHtml(meta) {
 function startNewSession() {
   state.sessionId = generateSessionId();
   state.supersedesSessionId = '';
+  state.sessionImage = null;
+  renderSessionImage();
   renderSessionMetadata();
 }
 
@@ -3509,6 +3681,7 @@ function init() {
   updateProgress();
   setSaveStatus('');
   setEditorMode('form');
+  renderSessionImage();
   renderBuildId();
 }
 
@@ -3560,6 +3733,7 @@ function bindEvents() {
   els.editorModalOverlay.addEventListener('click', function (e) { if (e.target === els.editorModalOverlay) closeEditor(); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+      if (els.sessionImageContextMenu && !els.sessionImageContextMenu.classList.contains('hidden')) { hideSessionImageContextMenu(); return; }
       if (els.stationSearchOverlay && !els.stationSearchOverlay.classList.contains('hidden')) { closeStationSearchModal(); return; }
       if (els.iconPickerOverlay && !els.iconPickerOverlay.classList.contains('hidden')) { closeIconPicker(); return; }
       if (els.validationWarningOverlay && !els.validationWarningOverlay.classList.contains('hidden')) { cancelValidationWarningModal(); return; }
@@ -3599,7 +3773,26 @@ function bindEvents() {
   if (els.newSessionIdBtn) els.newSessionIdBtn.addEventListener('click', function () {
     state.sessionId = generateSessionId();
     els.sessionIdInput.value = state.sessionId;
+    clearSessionImage();
   });
+  if (els.sessionImagePill) {
+    els.sessionImagePill.addEventListener('paste', handleSessionImagePaste);
+    els.sessionImagePill.addEventListener('dragover', handleSessionImageDragOver);
+    els.sessionImagePill.addEventListener('dragleave', handleSessionImageDragLeave);
+    els.sessionImagePill.addEventListener('drop', handleSessionImageDrop);
+    els.sessionImagePill.addEventListener('contextmenu', openSessionImageContextMenu);
+    els.sessionImagePill.addEventListener('click', function () { els.sessionImagePill.focus(); });
+  }
+  if (els.sessionImageFileInput) els.sessionImageFileInput.addEventListener('change', handleSessionImageFileInput);
+  if (els.clearSessionImageBtn) els.clearSessionImageBtn.addEventListener('click', clearSessionImage);
+  if (els.sessionImageContextMenu) els.sessionImageContextMenu.addEventListener('click', handleSessionImageContextMenuClick);
+  document.addEventListener('click', function (e) {
+    if (!els.sessionImageContextMenu || els.sessionImageContextMenu.classList.contains('hidden')) return;
+    if (els.sessionImagePill && els.sessionImagePill.contains(e.target)) return;
+    if (els.sessionImageContextMenu.contains(e.target)) return;
+    hideSessionImageContextMenu();
+  });
+  window.addEventListener('scroll', hideSessionImageContextMenu, true);
   if (els.clearSessionMetaBtn) els.clearSessionMetaBtn.addEventListener('click', function () {
     els.assessorInitialsInput.value = '';
     els.stationNumberInput.value = '';

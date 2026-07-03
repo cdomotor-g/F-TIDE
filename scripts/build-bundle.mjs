@@ -18,6 +18,7 @@ const ORDER = [
   'modules/tree-view.js',
   'modules/editor.js',
   'modules/stations.js',
+  'modules/session-image.js',
   'modules/file-ops.js',
   'app.js'
 ];
