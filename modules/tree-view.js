@@ -579,8 +579,8 @@ export function updateTreeViewDecisionPathHighlight() {
 export function refreshMiniTreeView() {
   if (!state.tree || !els.miniTreeCanvas) return;
   var svgNs = 'http://www.w3.org/2000/svg';
-  var width = 320;
   var height = 220;
+  var width = els.miniTreeCanvas.clientWidth || 320;
   var positions = buildMiniTreePositions(width, height);
   var currentId = getCurrentPayloadId();
   var pathState = getDecisionPathState();
@@ -727,6 +727,14 @@ export function syncMiniTreeView() {
   }
   refreshMiniTreeView();
 }
+
+var miniTreeResizeTimer = null;
+window.addEventListener('resize', function () {
+  clearTimeout(miniTreeResizeTimer);
+  miniTreeResizeTimer = setTimeout(function () {
+    if (state.tree) refreshMiniTreeView();
+  }, 120);
+});
 
 export function openTablesView() {
   if (!state.tree) {
