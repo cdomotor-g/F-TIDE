@@ -13,5 +13,8 @@ var REPORT_CSS = [
   '.report-link-list{margin-top:8px;font-size:13px;color:#1f2937}',
   '.report-link-list div{margin-top:4px}',
   '.report-link-list a{color:#2563eb;text-decoration:none}',
+  '.session-image{margin-top:12px}',
+  '.session-image-frame{margin-top:6px}',
+  '.session-image img{max-width:100%;height:auto;border:1px solid #d1d5db;border-radius:8px}',
   '.foot{margin-top:24px;color:#4b5563;font-size:12px}@media print{body{margin:14mm}}'
 ].join('');

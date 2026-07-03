@@ -7,6 +7,7 @@ import { setSaveStatus, clearMissingRuleForm, hideResultView, renderNode, render
 import { updateEditorDirtyState } from './editor.js';
 import { buildTreeTablesHtml } from './tree-view.js';
 import { renderAssessmentReport } from './stations.js';
+import { renderSessionImage } from './session-image.js';
 
 export function handleJsonFileSelected(event) {
   var file = event.target.files && event.target.files[0];
@@ -371,6 +372,10 @@ export function loadSession(session) {
   if (els.stationHubInput) els.stationHubInput.value = session.hub || '';
   state.assessmentReport = session.assessmentReport || { url: '', label: '', raw: '' };
   renderAssessmentReport();
+  // Session images are held in memory only, so a loaded session starts without
+  // one rather than inheriting the image from whatever was on screen before.
+  state.sessionImage = session.sessionImage || null;
+  renderSessionImage();
   renderSessionMetadata();
   state.history = (session.path || []).map(function (step) {
     return { nodeId: step.nodeId, question: step.question, answer: step.answer, next: step.next, icon: step.icon || DEFAULT_ICON, comment: step.comment || '' };
@@ -425,6 +430,11 @@ export function handleImportSessionsFile(event) {
 export function buildReportHtml(meta) {
   var dateText = meta.generatedAt.toLocaleString();
   var supersedesText = state.supersedesSessionId ? escapeHtml(state.supersedesSessionId) : '-';
+  var sessionImageBlock = '';
+  if (state.sessionImage && state.sessionImage.dataUrl) {
+    sessionImageBlock = '<div class="session-image"><strong>Session image:</strong>'
+      + '<div class="session-image-frame"><img src="' + escapeAttr(state.sessionImage.dataUrl) + '" alt="Session image" /></div></div>';
+  }
   var assessmentReport = meta.assessmentReport || { url: '', label: '', raw: '' };
   var assessmentReportHtml;
   if (assessmentReport.url) {
@@ -490,7 +500,7 @@ export function buildReportHtml(meta) {
     '<div><strong>Session ID:</strong> ' + escapeHtml(state.sessionId || '-') + '</div>' +
     '<div><strong>Rule set:</strong> ' + escapeHtml(state.tree.version || '-') + '</div>' +
     '<div><strong>Supersedes:</strong> ' + supersedesText + '</div>' +
-    '</div></section>' +
+    '</div>' + sessionImageBlock + '</section>' +
     '<section class="box"><h2>Decision path</h2><table><thead><tr><th>#</th><th>Question</th><th>Answer</th><th>Recommendation</th><th>Comments</th></tr></thead><tbody>' + rows + outcomeRow + '</tbody></table></section>' +
     rationaleBlock + treeTablesBlock + '<p class="foot">Open this report in a browser and print to PDF.</p>' + '</body></html>';
 }
@@ -498,6 +508,8 @@ export function buildReportHtml(meta) {
 export function startNewSession() {
   state.sessionId = generateSessionId();
   state.supersedesSessionId = '';
+  state.sessionImage = null;
+  renderSessionImage();
   renderSessionMetadata();
 }
 

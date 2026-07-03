@@ -5,6 +5,7 @@ import { setEditorMode, openCurrentPayloadEditor, closeEditor, openCreatePayload
 import { openTreeView, closeTreeView, autoArrangeTreeView, toggleTreeViewQuestionsOnly, filterTreeViewNodes, openTablesView, closeTablesView, handleTablesContentClick, zoomFitTreeView, cancelTreeViewLinking, hideTreeViewContextMenu } from './modules/tree-view.js';
 import { handleJsonFileSelected, saveTreeJson, forkCurrentTreeBranch, exportReport, saveCurrentSession, readPreviousSessionIds, renderPreviousSessionOptions, openSessionsModal, closeSessionsModal, exportSessionsJson, handleImportSessionsFile, generateSessionId } from './modules/file-ops.js';
 import { handleFredFileSelected, openFredFilePicker, handleStationNumberFocus, handleStationNumberActivate, openStationSearchModal, closeStationSearchModal, renderStationResults, handleStationResultsClick, clearStationDetails } from './modules/stations.js';
+import { renderSessionImage, clearSessionImage, handleSessionImageFileInput, handleSessionImageDragOver, handleSessionImageDragLeave, handleSessionImageDrop, handleSessionImagePaste, openSessionImageContextMenu, hideSessionImageContextMenu, handleSessionImageContextMenuClick } from './modules/session-image.js';
 
 init();
 
@@ -18,6 +19,7 @@ function init() {
   updateProgress();
   setSaveStatus('');
   setEditorMode('form');
+  renderSessionImage();
   renderBuildId();
 }
 
@@ -69,6 +71,7 @@ function bindEvents() {
   els.editorModalOverlay.addEventListener('click', function (e) { if (e.target === els.editorModalOverlay) closeEditor(); });
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
+      if (els.sessionImageContextMenu && !els.sessionImageContextMenu.classList.contains('hidden')) { hideSessionImageContextMenu(); return; }
       if (els.stationSearchOverlay && !els.stationSearchOverlay.classList.contains('hidden')) { closeStationSearchModal(); return; }
       if (els.iconPickerOverlay && !els.iconPickerOverlay.classList.contains('hidden')) { closeIconPicker(); return; }
       if (els.validationWarningOverlay && !els.validationWarningOverlay.classList.contains('hidden')) { cancelValidationWarningModal(); return; }
@@ -108,7 +111,26 @@ function bindEvents() {
   if (els.newSessionIdBtn) els.newSessionIdBtn.addEventListener('click', function () {
     state.sessionId = generateSessionId();
     els.sessionIdInput.value = state.sessionId;
+    clearSessionImage();
   });
+  if (els.sessionImagePill) {
+    els.sessionImagePill.addEventListener('paste', handleSessionImagePaste);
+    els.sessionImagePill.addEventListener('dragover', handleSessionImageDragOver);
+    els.sessionImagePill.addEventListener('dragleave', handleSessionImageDragLeave);
+    els.sessionImagePill.addEventListener('drop', handleSessionImageDrop);
+    els.sessionImagePill.addEventListener('contextmenu', openSessionImageContextMenu);
+    els.sessionImagePill.addEventListener('click', function () { els.sessionImagePill.focus(); });
+  }
+  if (els.sessionImageFileInput) els.sessionImageFileInput.addEventListener('change', handleSessionImageFileInput);
+  if (els.clearSessionImageBtn) els.clearSessionImageBtn.addEventListener('click', clearSessionImage);
+  if (els.sessionImageContextMenu) els.sessionImageContextMenu.addEventListener('click', handleSessionImageContextMenuClick);
+  document.addEventListener('click', function (e) {
+    if (!els.sessionImageContextMenu || els.sessionImageContextMenu.classList.contains('hidden')) return;
+    if (els.sessionImagePill && els.sessionImagePill.contains(e.target)) return;
+    if (els.sessionImageContextMenu.contains(e.target)) return;
+    hideSessionImageContextMenu();
+  });
+  window.addEventListener('scroll', hideSessionImageContextMenu, true);
   if (els.clearSessionMetaBtn) els.clearSessionMetaBtn.addEventListener('click', function () {
     els.assessorInitialsInput.value = '';
     els.stationNumberInput.value = '';

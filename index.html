@@ -139,6 +139,23 @@
         <p class="footnote">Live edits apply immediately. Use “Apply + save tree.json” in the editor when you want to download an updated copy.</p>
       </section>
       <aside class="panel">
+        <div class="card image-pill-card" id="sessionImageCard">
+          <div class="card-header">
+            <p class="card-title" style="margin:0;">Session image</p>
+            <button class="btn-small" id="clearSessionImageBtn" type="button" disabled>Clear</button>
+          </div>
+          <div id="sessionImagePill" class="image-pill" tabindex="0" role="button" aria-label="Session image. Paste a screenshot, drag and drop an image, or right-click to paste from clipboard or choose a file.">
+            <div id="sessionImagePlaceholder" class="image-pill-placeholder">
+              <span class="image-pill-hint">Paste a screenshot (Ctrl+V), drag &amp; drop an image, or right-click to paste from clipboard / choose a file.</span>
+            </div>
+            <img id="sessionImagePreview" class="image-pill-preview hidden" alt="Session image" />
+          </div>
+          <input class="file-input" id="sessionImageFileInput" type="file" accept="image/*" />
+        </div>
+        <div id="sessionImageContextMenu" class="image-pill-context-menu hidden" role="menu" aria-label="Session image actions">
+          <button type="button" class="image-pill-context-item" data-action="paste" role="menuitem">Paste from clipboard</button>
+          <button type="button" class="image-pill-context-item" data-action="upload" role="menuitem">Choose file to upload…</button>
+        </div>
         <div class="card mini-tree-card" id="miniTreeCard" role="button" tabindex="0" aria-label="Open tree map">
           <div class="card-header">
             <p class="card-title" style="margin:0;">Tree map</p>

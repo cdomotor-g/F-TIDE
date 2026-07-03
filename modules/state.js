@@ -25,5 +25,8 @@ export var state = {
   stationsData: [],
   stationsFileName: '',
   selectedStation: null,
-  assessmentReport: { url: '', label: '', raw: '' }
+  assessmentReport: { url: '', label: '', raw: '' },
+  // Clipboard/drag-drop image attached to the current session. Held in memory
+  // only (cleared when a new session begins); embedded into the export report.
+  sessionImage: null
 };
