@@ -1,6 +1,19 @@
 import { state } from './state.js';
 import { els } from './dom.js';
+import { SHAREPOINT_BASE } from './constants.js';
 import { escapeHtml, escapeAttr } from './utils.js';
+
+// Resolve an assessment-report href to an absolute URL. FReD stores these as
+// root-relative SharePoint paths; without an origin the browser would resolve
+// them against the host page instead of SharePoint.
+export function resolveReportUrl(href) {
+  var url = String(href == null ? '' : href).trim();
+  if (!url) return '';
+  if (/^https?:\/\//i.test(url)) return url;      // already absolute
+  if (url.indexOf('//') === 0) return 'https:' + url; // protocol-relative
+  if (url.charAt(0) === '/') return SHAREPOINT_BASE + url; // root-relative SharePoint path
+  return url;
+}
 
 // Module-scoped working set for the search modal.
 var currentStationMatches = [];
@@ -66,12 +79,12 @@ export function parseAssessmentReport(raw) {
       var doc = new DOMParser().parseFromString(value, 'text/html');
       var a = doc.querySelector('a');
       if (a) {
-        return { url: a.getAttribute('href') || '', label: (a.textContent || '').trim(), raw: value };
+        return { url: resolveReportUrl(a.getAttribute('href') || ''), label: (a.textContent || '').trim(), raw: value };
       }
     }
   } catch (_e) { /* fall through to plain handling */ }
   if (/^https?:/i.test(value) || value.charAt(0) === '/') {
-    return { url: value, label: value, raw: value };
+    return { url: resolveReportUrl(value), label: value, raw: value };
   }
   var stripped = value.replace(/<[^>]*>/g, '').trim();
   return { url: '', label: stripped || value, raw: value };
