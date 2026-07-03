@@ -28,7 +28,7 @@ body {
   position: relative;
   overflow-x: hidden;
 }
-.wrap { max-width: 1280px; margin: 0 auto; position: relative; z-index: 1; }
+.wrap { width: 100%; margin: 0 auto; position: relative; z-index: 1; }
 .header {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -50,7 +50,7 @@ body {
 .header h1 { margin: 0 0 8px 0; font-size: 34px; line-height: 1.15; }
 .header p { margin: 0; color: var(--muted); }
 .build-id { font-size: 11px; letter-spacing: 0.03em; opacity: 0.55; margin-top: 4px !important; font-family: monospace; }
-.grid { display: grid; grid-template-columns: 1.95fr 1fr; gap: 20px; align-items: start; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
 .panel {
   background: rgba(17, 26, 43, 0.92);
   border: 1px solid var(--border);
