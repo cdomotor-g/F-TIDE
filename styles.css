@@ -145,9 +145,15 @@ body {
   background: transparent; color: var(--text); font-size: 13px; cursor: pointer;
 }
 .image-pill-context-item:hover { background: rgba(59, 130, 246, 0.18); }
+.image-tree-row { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; }
+.image-tree-row > .card { flex: 1 1 240px; min-width: 0; margin-top: 0; }
+.image-tree-row + .card { margin-top: 16px; }
+.image-tree-row .mini-tree-canvas { height: 100%; min-height: 160px; }
 .mini-tree-card {
   cursor: pointer;
   transition: border-color .15s ease, background .15s ease, transform .05s ease;
+  display: flex;
+  flex-direction: column;
 }
 .mini-tree-card:hover, .mini-tree-card:focus-visible {
   border-color: #3a6dcc;
